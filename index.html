@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money Hub</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230e0f11'/%3E%3Ctext x='32' y='47' font-size='42' text-anchor='middle' fill='%234ade80' font-family='serif' font-weight='bold'%3E%24%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap');
+:root{
+  --bg:#0e0f11;--surface:#16181c;--surface2:#1e2128;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0f0ee;--muted:#7a7e89;--hint:#454950;
+  --green:#4ade80;--green-bg:rgba(74,222,128,0.08);--green-border:rgba(74,222,128,0.2);
+  --red:#f87171;--red-bg:rgba(248,113,113,0.08);--red-border:rgba(248,113,113,0.2);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.08);
+  --blue:#60a5fa;--blue-bg:rgba(96,165,250,0.08);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,0.08);
+  --pink:#f472b6;--pink-bg:rgba(244,114,182,0.08);
+  --accent:#4ade80;--r:8px;--rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;}
+.header{padding:16px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+.logo{font-size:19px;font-weight:700;letter-spacing:-0.5px;display:flex;align-items:center;gap:10px;}
+.logo-dot{width:9px;height:9px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
+.sync-status{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:20px;border:1px solid var(--border2);color:var(--muted);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite;}
+.sync-dot.ok{background:var(--green);}
+.sync-dot.err{background:var(--red);}
+.rates-bar{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;flex-wrap:wrap;}
+.rate-item{display:flex;align-items:center;gap:5px;}
+.rate-item input{width:58px;height:27px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--amber);font-family:'DM Mono',monospace;font-size:12px;padding:0 6px;outline:none;}
+.rate-item input:focus{border-color:var(--accent);}
+.tabs{display:flex;padding:0 28px;border-bottom:1px solid var(--border);}
+.tab{padding:12px 20px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:0.3px;transition:color 0.15s;}
+.tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.tab:hover{color:var(--text);}
+.content{padding:20px 28px;max-width:1200px;}
+.pane{display:none;}.pane.active{display:block;}
+.metrics-grid{display:grid;gap:10px;margin-bottom:12px;}
+.g2{grid-template-columns:repeat(2,1fr);}.g3{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(4,1fr);}.g5{grid-template-columns:repeat(5,1fr);}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;position:relative;overflow:hidden;}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.3s;}
+.metric:hover::before{opacity:1;}
+.ml{font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:0.5px;text-transform:uppercase;}
+.mv{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:-0.5px;}
+.mv2{font-size:11px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.mv-green{color:var(--green);}.mv-red{color:var(--red);}.mv-amber{color:var(--amber);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 18px;margin-bottom:10px;}
+.st{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;}
+.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+input[type="text"],input[type="number"],input[type="search"],select{height:34px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;padding:0 9px;outline:none;transition:border-color 0.15s;-webkit-appearance:none;}
+input:focus,select:focus{border-color:var(--accent);}
+select option{background:var(--surface2);}
+button{height:34px;padding:0 14px;border-radius:var(--r);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:1px solid var(--border2);background:transparent;color:var(--text);}
+button:hover{background:var(--surface2);}
+button:active{transform:scale(0.97);}
+.btn-g{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
+.btn-g:hover{background:rgba(74,222,128,0.15);}
+.btn-r{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
+.btn-r:hover{background:rgba(248,113,113,0.15);}
+.btn-amber{background:var(--amber-bg);border-color:rgba(251,191,36,0.3);color:var(--amber);}
+.btn-amber:hover{background:rgba(251,191,36,0.15);}
+.btn-blue{background:var(--blue-bg);border-color:rgba(96,165,250,0.3);color:var(--blue);}
+.btn-blue:hover{background:rgba(96,165,250,0.15);}
+.btn-del{border-color:var(--red-border);color:var(--red);height:22px;padding:0 9px;font-size:10px;background:transparent;}
+.btn-del:hover{background:var(--red-bg);}
+.btn-sm{height:28px;font-size:12px;padding:0 11px;}
+.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:0.3px;}
+.t-fund{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.t-spend{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.t-usd{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(96,165,250,0.2);}
+.t-eur{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+.t-egp{background:var(--pink-bg);color:var(--pink);border:1px solid rgba(244,114,182,0.2);}
+.t-eld{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(96,165,250,0.2);}
+.t-elo{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(167,139,250,0.2);}
+.t-gb{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.t-oth{background:rgba(120,120,120,0.1);color:var(--muted);border:1px solid var(--border2);}
+.warn{font-size:12px;color:var(--red);display:none;margin-top:7px;padding:5px 10px;background:var(--red-bg);border-radius:var(--r);border:1px solid var(--red-border);}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px;}
+th{text-align:left;color:var(--muted);font-weight:600;padding:7px 6px;border-bottom:1px solid var(--border2);font-size:10px;letter-spacing:0.8px;text-transform:uppercase;font-family:'DM Mono',monospace;}
+td{padding:7px 6px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'DM Mono',monospace;font-size:12px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px;}
+.empty-state{text-align:center;color:var(--hint);padding:28px 0;font-size:13px;font-family:'DM Mono',monospace;}
+.hint-text{font-size:11px;color:var(--muted);margin-top:7px;font-family:'DM Mono',monospace;}
+.search-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;padding:10px 14px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);}
+.search-bar input[type="search"]{flex:1;min-width:140px;background:var(--surface);height:30px;font-size:12px;}
+.search-bar select{height:30px;font-size:12px;background:var(--surface);}
+.search-label{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap;}
+.search-results-count{font-size:11px;color:var(--amber);font-family:'DM Mono',monospace;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:24px;min-width:320px;max-width:96vw;max-height:88vh;overflow-y:auto;}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);}
+.modal-close{float:right;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;background:none;border:none;padding:0;}
+.modal-close:hover{color:var(--text);}
+.archive-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'DM Mono',monospace;}
+.archive-table th{text-align:left;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;}
+.archive-table td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text);}
+.archive-table tr:last-child td{border-bottom:none;}
+.badge-month{display:inline-block;background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,0.25);border-radius:20px;font-size:10px;padding:2px 8px;font-family:'DM Mono',monospace;font-weight:600;}
+.loading-overlay{position:fixed;inset:0;background:rgba(14,15,17,0.9);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;}
+.highlight{background:rgba(251,191,36,0.2);color:var(--amber);border-radius:3px;padding:0 2px;}
+@media(max-width:700px){
+  .header{padding:12px 14px;}
+  .content{padding:14px;}
+  .tabs{padding:0 14px;}
+  .g4,.g5{grid-template-columns:repeat(2,1fr);}
+  .g3{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <p class="loading-text" id="loading-text">Connecting to Google Sheets...</p>
+</div>
+
+<div class="header">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 64 64" style="border-radius:6px;flex-shrink:0;">
+      <rect width="64" height="64" rx="10" fill="#0e0f11"/>
+      <text x="32" y="47" font-size="42" text-anchor="middle" fill="#4ade80" font-family="serif" font-weight="bold">$</text>
+    </svg>
+    Money Hub
+    <div class="logo-dot"></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div class="sync-status" id="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-text">Connecting...</span>
+    </div>
+    <div class="rates-bar">
+      <div class="rate-item"><span>1€=$</span><input type="number" id="eur-rate" value="1.08" step="0.01" min="0.5" max="3" oninput="rerender()"></div>
+      <div class="rate-item"><span>1$=LE</span><input type="number" id="egp-rate" value="50" step="0.5" min="1" max="200" oninput="rerender()"></div>
+      <button class="btn-blue btn-sm" onclick="exportExcel()">Export Excel</button>
+      <button class="btn-amber btn-sm" onclick="document.getElementById('import-input').click()">Import Excel</button>
+      <input type="file" id="import-input" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(event)">
+      <button class="btn-sm" onclick="syncAll(false)" style="font-size:11px;">↻ Sync</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('sales')">Sales</button>
+  <button class="tab" onclick="switchTab('spending')">Spending</button>
+  <button class="tab" onclick="switchTab('archive')">Archive</button>
+</div>
+
+<div class="content">
+
+<!-- ═══ SALES ═══ -->
+<div id="pane-sales" class="pane active">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:var(--muted);">Viewing:</span>
+      <select id="s-month-view" onchange="renderSalesStats();renderSales()" style="height:30px;font-size:12px;width:130px;"></select>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      <button class="btn-amber btn-sm" onclick="closeMonth('sales')">Close Month &amp; Archive</button>
+      <button class="btn-blue btn-sm" onclick="openModal('modal-sales-archive')">View Archive</button>
+    </div>
+  </div>
+  <div class="metrics-grid g5">
+    <div class="metric"><p class="ml">Revenue</p><p class="mv" id="s-rev">$0.00</p></div>
+    <div class="metric"><p class="ml">Profit</p><p class="mv mv-green" id="s-profit">$0.00</p></div>
+    <div class="metric"><p class="ml">Cost</p><p class="mv mv-red" id="s-cost-total">$0.00</p></div>
+    <div class="metric"><p class="ml">Sales</p><p class="mv" id="s-count">0</p></div>
+    <div class="metric"><p class="ml">Profit / Day</p><p class="mv mv-amber" id="s-per-day">$0.00</p><p class="mv2" id="s-per-day-sub"></p></div>
+  </div>
+  <div class="card">
+    <p class="st">Add sale</p>
+    <div class="row">
+      <input type="text" id="s-ref" placeholder="Ref (e.g. REF#NA-70)" style="width:148px;">
+      <select id="s-site" style="width:125px;">
+        <option value="Eldorado">Eldorado</option>
+        <option value="Eloboost24">Eloboost24</option>
+        <option value="GameBoost">GameBoost</option>
+        <option value="Other">Other</option>
+      </select>
+      <select id="s-cur" style="width:78px;">
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+        <option value="EGP">LE EGP</option>
+      </select>
+      <input type="number" id="s-price" placeholder="Sell price" style="width:105px;">
+      <input type="number" id="s-cost" placeholder="Cost $" style="width:95px;">
+      <input type="number" id="s-profit-input" placeholder="Profit $" style="width:95px;">
+      <button class="btn-g" onclick="addSale()">+ Add sale</button>
+    </div>
+    <p class="hint-text">Cost and Profit in $ — enter your actual values after any fees.</p>
+    <div class="warn" id="s-warn">Please fill in sell price and profit.</div>
+  </div>
+  <div class="card">
+    <div class="log-header">
+      <p class="st" style="margin:0;">Sales log</p>
+      <button onclick="clearCurrentSales()" class="btn-del btn-sm">Clear month</button>
+    </div>
+    <!-- Sales Search -->
+    <div class="search-bar">
+      <span class="search-label">Search:</span>
+      <input type="search" id="s-search" placeholder="Ref code..." style="" oninput="renderSales()">
+      <select id="s-filter-site" onchange="renderSales()" style="">
+        <option value="All">All sites</option>
+        <option value="Eldorado">Eldorado</option>
+        <option value="Eloboost24">Eloboost24</option>
+        <option value="GameBoost">GameBoost</option>
+        <option value="Other">Other</option>
+      </select>
+      <select id="s-filter-cur" onchange="renderSales()" style="">
+        <option value="All">All currencies</option>
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="EGP">EGP</option>
+      </select>
+      <span class="search-results-count" id="s-results-count"></span>
+      <button class="btn-sm" style="font-size:11px;height:28px;" onclick="clearSalesSearch()">Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:68px;">Date</th><th style="width:130px;">Ref</th><th style="width:90px;">Site</th>
+          <th style="width:52px;">Cur</th><th style="width:82px;">Price</th><th style="width:72px;">Cost</th>
+          <th style="width:78px;">Profit</th><th style="width:34px;"></th>
+        </tr></thead>
+        <tbody id="sales-body"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SPENDING ═══ -->
+<div id="pane-spending" class="pane">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:var(--muted);">Viewing:</span>
+      <select id="sp-month-view" onchange="renderSpendStats();renderSpending()" style="height:30px;font-size:12px;width:130px;"></select>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      <button class="btn-amber btn-sm" onclick="closeMonth('spending')">Close Month &amp; Archive</button>
+      <button class="btn-blue btn-sm" onclick="openModal('modal-spend-archive')">View Archive</button>
+    </div>
+  </div>
+  <div class="metrics-grid g2" style="margin-bottom:10px;">
+    <div class="metric"><p class="ml">Balance (USD)</p><p class="mv" id="b-usd">$0.00</p><p class="mv2" id="b-egp-sub">≈ LE 0</p></div>
+    <div class="metric"><p class="ml">Balance (EGP)</p><p class="mv" id="b-egp">LE 0</p><p class="mv2" id="b-usd-sub">≈ $0.00</p></div>
+  </div>
+  <div class="metrics-grid g3">
+    <div class="metric"><p class="ml">Total funded</p><p class="mv mv-green" id="sp-funded">$0.00</p><p class="mv2" id="sp-funded-egp">≈ LE 0</p></div>
+    <div class="metric"><p class="ml">Total spent</p><p class="mv mv-red" id="sp-spent">$0.00</p><p class="mv2" id="sp-spent-egp">≈ LE 0</p></div>
+    <div class="metric"><p class="ml">Transactions</p><p class="mv" id="sp-count">0</p></div>
+  </div>
+  <div class="card">
+    <p class="st">Add funds</p>
+    <div class="row">
+      <input type="number" id="f-amount" placeholder="Amount" style="width:115px;" min="0" step="0.01">
+      <select id="f-cur" style="width:82px;">
+        <option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="EGP">LE EGP</option>
+      </select>
+      <input type="text" id="f-note" placeholder="Note (e.g. Paypal deposit)" style="flex:1;min-width:130px;">
+      <button class="btn-g" onclick="addFund()">+ Add funds</button>
+    </div>
+  </div>
+  <div class="card">
+    <p class="st">Add spending</p>
+    <div class="row">
+      <input type="number" id="sp-amount" placeholder="Amount" style="width:115px;" min="0" step="0.01">
+      <select id="sp-cur" style="width:82px;">
+        <option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="EGP">LE EGP</option>
+      </select>
+      <select id="sp-cat" style="width:115px;">
+        <option value="Cost">Cost</option><option value="Tools">Tools</option>
+        <option value="Withdraw">Withdraw</option><option value="Food">Food</option><option value="Other">Other</option>
+      </select>
+      <input type="text" id="sp-note" placeholder="Description" style="flex:1;min-width:100px;">
+      <button class="btn-r" onclick="addSpend()">- Spend</button>
+    </div>
+    <div class="warn" id="sp-warn">Not enough balance!</div>
+  </div>
+  <div class="card">
+    <div class="log-header">
+      <p class="st" style="margin:0;">Money flow</p>
+      <button onclick="clearCurrentSpending()" class="btn-del btn-sm">Clear month</button>
+    </div>
+    <!-- Spending Search -->
+    <div class="search-bar">
+      <span class="search-label">Search:</span>
+      <input type="search" id="sp-search" placeholder="Note / description..." oninput="renderSpending()">
+      <select id="sp-filter-type" onchange="renderSpending()" style="">
+        <option value="All">All types</option>
+        <option value="fund">Funds only</option>
+        <option value="spend">Spending only</option>
+      </select>
+      <select id="sp-filter-cat" onchange="renderSpending()" style="">
+        <option value="All">All categories</option>
+        <option value="Cost">Cost</option>
+        <option value="Tools">Tools</option>
+        <option value="Withdraw">Withdraw</option>
+        <option value="Food">Food</option>
+        <option value="Other">Other</option>
+      </select>
+      <select id="sp-filter-cur" onchange="renderSpending()" style="">
+        <option value="All">All currencies</option>
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="EGP">EGP</option>
+      </select>
+      <span class="search-results-count" id="sp-results-count"></span>
+      <button class="btn-sm" style="font-size:11px;height:28px;" onclick="clearSpendSearch()">Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:65px;">Date</th><th style="width:58px;">Type</th><th style="width:82px;">Category</th>
+          <th style="width:88px;">Amount</th><th style="width:50px;">Cur</th><th style="width:76px;">In USD</th>
+          <th style="width:76px;">In EGP</th><th style="width:86px;">Balance $</th><th>Note</th><th style="width:34px;"></th>
+        </tr></thead>
+        <tbody id="sp-body"><tr><td colspan="10" class="empty-state">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ARCHIVE ═══ -->
+<div id="pane-archive" class="pane">
+  <div class="metrics-grid g2" style="margin-bottom:16px;">
+    <div class="metric"><p class="ml">All-time profit</p><p class="mv mv-green" id="arch-total-profit">$0.00</p></div>
+    <div class="metric"><p class="ml">All-time spent</p><p class="mv mv-red" id="arch-total-spend">$0.00</p></div>
+  </div>
+  <div class="card">
+    <p class="st">Monthly sales archive</p>
+    <div class="table-wrap">
+      <table class="archive-table">
+        <thead><tr><th>Month</th><th>Sales</th><th>Revenue</th><th>Profit</th><th>Cost</th><th>Profit/Day</th></tr></thead>
+        <tbody id="arch-sales-body"><tr><td colspan="6" class="empty-state">No archived months yet</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <p class="st">Monthly spending archive</p>
+    <div class="table-wrap">
+      <table class="archive-table">
+        <thead><tr><th>Month</th><th>Funded $</th><th>Funded LE</th><th>Spent $</th><th>Spent LE</th><th>Transactions</th></tr></thead>
+        <tbody id="arch-spend-body"><tr><td colspan="6" class="empty-state">No archived months yet</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Modals -->
+<div class="modal-bg" id="modal-sales-archive">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-sales-archive')">&#x2715;</button>
+    <h3>Sales archive</h3>
+    <div id="modal-sales-archive-body"></div>
+  </div>
+</div>
+<div class="modal-bg" id="modal-spend-archive">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-spend-archive')">&#x2715;</button>
+    <h3>Spending archive</h3>
+    <div id="modal-spend-archive-body"></div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXp0bSJFsDZ-y4gYiKGutqpQ5vuDrMZv2_Jjosk4bEaqGrXlhUlsaw5qA9wsSWdT8n/exec';
+
+let sales = [];
+let spending = [];
+let salesArchive = [];
+let spendArchive = [];
+let isSyncing = false;
+
+// ─── DATE UTILITIES ───────────────────────────────
+// Always store and display as DD/MM/YY
+// Sanitize ANY incoming date format to DD/MM/YY
+function sanitizeDate(raw) {
+  if (!raw) return today();
+  const s = String(raw).trim();
+
+  // Already DD/MM/YY exactly
+  if (/^\d{2}\/\d{2}\/\d{2}$/.test(s)) return s;
+
+  // Try parsing as Date object (handles ISO, timestamps, etc.)
+  let d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return String(d.getDate()).padStart(2,'0') + '/' +
+           String(d.getMonth()+1).padStart(2,'0') + '/' +
+           String(d.getFullYear()).slice(2);
+  }
+
+  // M/D/YY or M/D/YYYY
+  const parts = s.split('/');
+  if (parts.length === 3) {
+    const mm = parts[0].padStart(2,'0');
+    const dd = parts[1].padStart(2,'0');
+    const yy = parts[2].length === 4 ? parts[2].slice(2) : parts[2].padStart(2,'0');
+    return `${dd}/${mm}/${yy}`;
+  }
+
+  return today();
+}
+
+function today() {
+  const d = new Date();
+  return String(d.getDate()).padStart(2,'0') + '/' +
+         String(d.getMonth()+1).padStart(2,'0') + '/' +
+         String(d.getFullYear()).slice(2);
+}
+
+function dateToMonthKey(dateStr) {
+  // dateStr is DD/MM/YY
+  const p = dateStr.split('/');
+  if (p.length !== 3) return currentMonthKey();
+  const dd = parseInt(p[0]), mm = parseInt(p[1]), yy = parseInt(p[2]);
+  const fullYear = yy < 100 ? 2000 + yy : yy;
+  return fullYear + '-' + String(mm).padStart(2,'0');
+}
+
+function currentMonthKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function monthLabel(key) {
+  const [y, m] = key.split('-');
+  const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return mn[parseInt(m)-1] + ' 20' + String(y).slice(2);
+}
+
+function daysElapsedInMonth(mk) {
+  const [y, m] = mk.split('-').map(Number);
+  const now = new Date();
+  const curKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  if (mk === curKey) return Math.max(1, now.getDate());
+  return new Date(y, m, 0).getDate();
+}
+
+function daysInMonth(mk) {
+  const [y, m] = mk.split('-').map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+// ─── RATES & FORMAT ───────────────────────────────
+const EUR = () => parseFloat(document.getElementById('eur-rate').value) || 1.08;
+const EGP = () => parseFloat(document.getElementById('egp-rate').value) || 50;
+
+function toUSD(amt, cur) {
+  if (cur === 'EUR') return amt * EUR();
+  if (cur === 'EGP') return amt / EGP();
+  return amt;
+}
+function fmtUSD(v) { return '$' + Math.abs(v).toFixed(2); }
+function fmtEGP(v) { return 'LE ' + Math.abs(Math.round(v)).toLocaleString(); }
+function fmtOrig(amt, cur) {
+  if (cur === 'EUR') return '€' + amt.toFixed(2);
+  if (cur === 'EGP') return 'LE ' + Math.round(amt).toLocaleString();
+  return '$' + amt.toFixed(2);
+}
+function siteCls(s) { return s==='Eldorado'?'t-eld':s==='Eloboost24'?'t-elo':s==='GameBoost'?'t-gb':'t-oth'; }
+function curCls(c) { return c==='EUR'?'t-eur':c==='EGP'?'t-egp':'t-usd'; }
+
+function highlight(text, query) {
+  if (!query || !text) return text || '';
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(text).replace(new RegExp('(' + escaped + ')', 'gi'), '<span class="highlight">$1</span>');
+}
+
+// ─── SYNC STATUS ──────────────────────────────────
+function setSyncStatus(state, text) {
+  document.getElementById('sync-dot').className = 'sync-dot ' + state;
+  document.getElementById('sync-text').textContent = text;
+}
+
+// ─── GOOGLE SHEETS ────────────────────────────────
+async function sheetRead(sheetName) {
+  const url = SCRIPT_URL + '?sheet=' + encodeURIComponent(sheetName) + '&t=' + Date.now();
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.rows || [];
+}
+
+async function sheetWrite(sheetName, rows) {
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ sheet: sheetName, action: 'write', rows }),
+  });
+  const data = await res.json();
+  return data.status === 'ok';
+}
+
+// ─── SERIALIZE ────────────────────────────────────
+function salesToRows(arr) {
+  const rows = [['date','ref','site','cur','priceOrig','priceUSD','costUSD','profit']];
+  arr.forEach(t => rows.push([
+    t.date, t.ref||'', t.site, t.cur,
+    t.priceOrig, t.priceUSD,
+    t.costUSD !== null && t.costUSD !== undefined ? t.costUSD : '',
+    t.profit
+  ]));
+  return rows;
+}
+
+function rowsToSales(rows) {
+  if (!rows || rows.length < 2) return [];
+  return rows.slice(1).filter(r => r[0]).map(r => ({
+    date: sanitizeDate(r[0]),
+    ref: String(r[1]||''),
+    site: r[2]||'Other',
+    cur: r[3]||'USD',
+    priceOrig: parseFloat(r[4])||0,
+    priceUSD: parseFloat(r[5])||0,
+    costUSD: (r[6]!==''&&r[6]!==undefined&&r[6]!==null) ? parseFloat(r[6]) : null,
+    profit: parseFloat(r[7])||0
+  }));
+}
+
+function spendingToRows(arr) {
+  const rows = [['date','type','cat','amtOrig','cur','amtUSD','note']];
+  arr.forEach(t => rows.push([
+    t.date, t.type, t.cat||'', t.amtOrig, t.cur, t.amtUSD, t.note||''
+  ]));
+  return rows;
+}
+
+function rowsToSpending(rows) {
+  if (!rows || rows.length < 2) return [];
+  return rows.slice(1).filter(r => r[0]).map(r => ({
+    date: sanitizeDate(r[0]),
+    type: r[1]||'spend',
+    cat: r[2]||'',
+    amtOrig: parseFloat(r[3])||0,
+    cur: r[4]||'USD',
+    amtUSD: parseFloat(r[5])||0,
+    note: r[6]||''
+  }));
+}
+
+function archiveToRows(arr) {
+  const rows = [['monthKey','label','type','statsJSON','entriesJSON']];
+  arr.forEach(a => rows.push([
+    a.monthKey, a.label, a.type||'',
+    JSON.stringify(a.stats),
+    JSON.stringify(a.entries)
+  ]));
+  return rows;
+}
+
+function rowsToArchive(rows) {
+  if (!rows || rows.length < 2) return [];
+  return rows.slice(1).filter(r => r[0]).map(r => ({
+    monthKey: String(r[0]),
+    label: String(r[1]||''),
+    type: String(r[2]||''),
+    stats: safeJSON(r[3], {}),
+    entries: safeJSON(r[4], [])
+  }));
+}
+
+function safeJSON(str, def) {
+  try { return JSON.parse(str); } catch(e) { return def; }
+}
+
+// ─── SAVE LOCALLY ────────────────────────────────
+function saveLocal() {
+  try { localStorage.setItem('mh_sales', JSON.stringify(sales)); } catch(e) {}
+  try { localStorage.setItem('mh_spending', JSON.stringify(spending)); } catch(e) {}
+  try { localStorage.setItem('mh_salesarch', JSON.stringify(salesArchive)); } catch(e) {}
+  try { localStorage.setItem('mh_spendarch', JSON.stringify(spendArchive)); } catch(e) {}
+}
+
+function loadLocal() {
+  try { sales = JSON.parse(localStorage.getItem('mh_sales')||'[]'); } catch(e) { sales=[]; }
+  try { spending = JSON.parse(localStorage.getItem('mh_spending')||'[]'); } catch(e) { spending=[]; }
+  try { salesArchive = JSON.parse(localStorage.getItem('mh_salesarch')||'[]'); } catch(e) { salesArchive=[]; }
+  try { spendArchive = JSON.parse(localStorage.getItem('mh_spendarch')||'[]'); } catch(e) { spendArchive=[]; }
+  // Migrate old keys
+  if (!sales.length) { try { const o=JSON.parse(localStorage.getItem('mh_sales_v4')||localStorage.getItem('mh_sales_v3')||'[]'); if(o.length) sales=o; } catch(e){} }
+  if (!spending.length) { try { const o=JSON.parse(localStorage.getItem('mh_spending_v4')||localStorage.getItem('mh_spending_v3')||'[]'); if(o.length) spending=o; } catch(e){} }
+  // Sanitize all dates from local cache too
+  sales = sales.map(s => ({...s, date: sanitizeDate(s.date)}));
+  spending = spending.map(s => ({...s, date: sanitizeDate(s.date)}));
+}
+
+// ─── SYNC ─────────────────────────────────────────
+async function syncAll(push) {
+  if (isSyncing) return;
+  isSyncing = true;
+  setSyncStatus('syncing', push ? 'Saving...' : 'Syncing...');
+  try {
+    if (push) {
+      await Promise.all([
+        sheetWrite('sales', salesToRows(sales)),
+        sheetWrite('spending', spendingToRows(spending)),
+      ]);
+    } else {
+      const [sRows, spRows, archRows] = await Promise.all([
+        sheetRead('sales'),
+        sheetRead('spending'),
+        sheetRead('archive'),
+      ]);
+      if (sRows && sRows.length) sales = rowsToSales(sRows);
+      if (spRows && spRows.length) spending = rowsToSpending(spRows);
+      if (archRows && archRows.length) {
+        const all = rowsToArchive(archRows);
+        salesArchive = all.filter(a => a.type === 'sales' || (a.stats && a.stats.rev !== undefined));
+        spendArchive = all.filter(a => a.type === 'spend' || (a.stats && a.stats.funded !== undefined));
+      }
+    }
+    saveLocal();
+    setSyncStatus('ok', push ? 'Saved ✓' : 'Synced ✓');
+  } catch(e) {
+    console.error('Sync error', e);
+    setSyncStatus('err', 'Sync failed');
+  }
+  isSyncing = false;
+  populateMonthSelectors();
+  rerender();
+}
+
+async function pushData() {
+  setSyncStatus('syncing', 'Saving...');
+  isSyncing = true;
+  try {
+    await Promise.all([
+      sheetWrite('sales', salesToRows(sales)),
+      sheetWrite('spending', spendingToRows(spending)),
+    ]);
+    saveLocal();
+    setSyncStatus('ok', 'Saved ✓');
+  } catch(e) {
+    saveLocal(); // at least save locally
+    setSyncStatus('err', 'Save failed — kept locally');
+  }
+  isSyncing = false;
+  populateMonthSelectors();
+  rerender();
+}
+
+async function pushArchive() {
+  setSyncStatus('syncing', 'Archiving...');
+  isSyncing = true;
+  try {
+    const combined = [
+      ...salesArchive.map(a => ({...a, type:'sales'})),
+      ...spendArchive.map(a => ({...a, type:'spend'}))
+    ];
+    await sheetWrite('archive', archiveToRows(combined));
+    saveLocal();
+    setSyncStatus('ok', 'Archived ✓');
+  } catch(e) {
+    saveLocal();
+    setSyncStatus('err', 'Archive save failed');
+  }
+  isSyncing = false;
+  rerender();
+}
+
+// ─── TABS & MODALS ────────────────────────────────
+function switchTab(t) {
+  const names = ['sales','spending','archive'];
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', names[i]===t));
+  names.forEach(n => document.getElementById('pane-'+n).classList.toggle('active', n===t));
+  if (t==='archive') renderArchive();
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); renderModalArchive(id); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => { if (e.target.classList.contains('modal-bg')) e.target.classList.remove('open'); });
+
+// ─── MONTH SELECTORS ──────────────────────────────
+function populateMonthSelectors() {
+  populateSel('s-month-view', sales);
+  populateSel('sp-month-view', spending);
+}
+
+function populateSel(elId, data) {
+  const sel = document.getElementById(elId);
+  const cur = sel.value;
+  const keys = new Set([currentMonthKey()]);
+  data.forEach(r => { try { keys.add(dateToMonthKey(r.date)); } catch(e){} });
+  const sorted = [...keys].sort().reverse();
+  sel.innerHTML = sorted.map(k => `<option value="${k}"${k===cur?' selected':''}>${monthLabel(k)}</option>`).join('');
+  if (!sel.value || !sorted.includes(sel.value)) sel.value = sorted[0] || currentMonthKey();
+}
+
+function getVM(id) { return document.getElementById(id).value; }
+
+function filterByMonth(data, mk) {
+  return data.filter(r => { try { return dateToMonthKey(r.date) === mk; } catch(e) { return false; } });
+}
+
+// ─── SEARCH HELPERS ───────────────────────────────
+function clearSalesSearch() {
+  document.getElementById('s-search').value = '';
+  document.getElementById('s-filter-site').value = 'All';
+  document.getElementById('s-filter-cur').value = 'All';
+  renderSales();
+}
+function clearSpendSearch() {
+  document.getElementById('sp-search').value = '';
+  document.getElementById('sp-filter-type').value = 'All';
+  document.getElementById('sp-filter-cat').value = 'All';
+  document.getElementById('sp-filter-cur').value = 'All';
+  renderSpending();
+}
+
+// ─── SALES ────────────────────────────────────────
+function addSale() {
+  const ref = document.getElementById('s-ref').value.trim();
+  const site = document.getElementById('s-site').value;
+  const cur = document.getElementById('s-cur').value;
+  const price = parseFloat(document.getElementById('s-price').value);
+  const costRaw = document.getElementById('s-cost').value;
+  const profitRaw = document.getElementById('s-profit-input').value;
+  const warn = document.getElementById('s-warn');
+  if (!price || isNaN(price) || profitRaw==='') {
+    warn.style.display='block'; setTimeout(()=>warn.style.display='none',2500); return;
+  }
+  warn.style.display='none';
+  sales.push({
+    date: today(), ref, site, cur,
+    priceOrig: price, priceUSD: toUSD(price, cur),
+    costUSD: costRaw!=='' ? parseFloat(costRaw) : null,
+    profit: parseFloat(profitRaw)
+  });
+  document.getElementById('s-ref').value='';
+  document.getElementById('s-price').value='';
+  document.getElementById('s-cost').value='';
+  document.getElementById('s-profit-input').value='';
+  pushData();
+}
+
+function renderSalesStats() {
+  const mk = getVM('s-month-view');
+  const list = filterByMonth(sales, mk);
+  const rev = list.reduce((s,t)=>s+t.priceUSD,0);
+  const profit = list.reduce((s,t)=>s+t.profit,0);
+  const cost = list.reduce((s,t)=>s+(t.costUSD||0),0);
+  const days = daysElapsedInMonth(mk);
+  document.getElementById('s-rev').textContent = fmtUSD(rev);
+  document.getElementById('s-profit').textContent = fmtUSD(profit);
+  document.getElementById('s-cost-total').textContent = fmtUSD(cost);
+  document.getElementById('s-count').textContent = list.length;
+  document.getElementById('s-per-day').textContent = fmtUSD(days>0 ? profit/days : 0);
+  document.getElementById('s-per-day-sub').textContent = 'over '+days+' day'+(days!==1?'s':'');
+}
+
+function renderSales() {
+  const body = document.getElementById('sales-body');
+  const mk = getVM('s-month-view');
+  const query = document.getElementById('s-search').value.trim().toLowerCase();
+  const fSite = document.getElementById('s-filter-site').value;
+  const fCur = document.getElementById('s-filter-cur').value;
+
+  let list = filterByMonth(sales, mk);
+  if (fSite !== 'All') list = list.filter(s => s.site === fSite);
+  if (fCur !== 'All') list = list.filter(s => s.cur === fCur);
+  if (query) list = list.filter(s =>
+    (s.ref||'').toLowerCase().includes(query) ||
+    (s.site||'').toLowerCase().includes(query) ||
+    (s.date||'').includes(query)
+  );
+
+  document.getElementById('s-results-count').textContent = query || fSite!=='All' || fCur!=='All' ? list.length+' result'+(list.length!==1?'s':'') : '';
+
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="8" class="empty-state">'+(query?'No results for "'+query+'"':'No sales for this month')+'</td></tr>';
+    return;
+  }
+
+  body.innerHTML = [...list].reverse().map(t => {
+    const idx = sales.indexOf(t);
+    const pc = t.profit >= 0 ? 'var(--green)' : 'var(--red)';
+    const refDisplay = query ? highlight(t.ref||'—', query) : (t.ref||'—');
+    return `<tr>
+      <td style="color:var(--muted);">${t.date}</td>
+      <td>${refDisplay}</td>
+      <td><span class="tag ${siteCls(t.site)}">${t.site}</span></td>
+      <td><span class="tag ${curCls(t.cur)}">${t.cur}</span></td>
+      <td>${fmtOrig(t.priceOrig, t.cur)}</td>
+      <td style="color:var(--muted);">${t.costUSD!==null&&t.costUSD!==undefined ? fmtUSD(t.costUSD) : '—'}</td>
+      <td style="font-weight:600;color:${pc};">${fmtUSD(t.profit)}</td>
+      <td><button class="btn-del" onclick="delSale(${idx})">x</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function delSale(i) {
+  if (!confirm('Delete this sale?')) return;
+  sales.splice(i, 1);
+  pushData();
+}
+
+function clearCurrentSales() {
+  const mk = getVM('s-month-view');
+  if (!confirm('Clear all sales for '+monthLabel(mk)+'?')) return;
+  sales = sales.filter(s => dateToMonthKey(s.date) !== mk);
+  pushData();
+}
+
+// ─── SPENDING ─────────────────────────────────────
+function getBalanceUSD() { return spending.reduce((b,t) => t.type==='fund' ? b+t.amtUSD : b-t.amtUSD, 0); }
+function getTotalFundedUSD(data) { return (data||spending).filter(t=>t.type==='fund').reduce((s,t)=>s+t.amtUSD,0); }
+function getTotalSpentUSD(data) { return (data||spending).filter(t=>t.type==='spend').reduce((s,t)=>s+t.amtUSD,0); }
+
+function renderSpendStats() {
+  const mk = getVM('sp-month-view');
+  const list = filterByMonth(spending, mk);
+  const bal = getBalanceUSD();
+  const balEGP = bal * EGP();
+  const funded = getTotalFundedUSD(list);
+  const spent = getTotalSpentUSD(list);
+  const uE = document.getElementById('b-usd');
+  const eE = document.getElementById('b-egp');
+  uE.textContent = fmtUSD(bal); uE.className = 'mv '+(bal<0?'mv-red':'mv-green');
+  eE.textContent = fmtEGP(balEGP); eE.className = 'mv '+(bal<0?'mv-red':'mv-green');
+  document.getElementById('b-egp-sub').textContent = '≈ '+fmtEGP(balEGP);
+  document.getElementById('b-usd-sub').textContent = '≈ '+fmtUSD(bal);
+  document.getElementById('sp-funded').textContent = fmtUSD(funded);
+  document.getElementById('sp-funded-egp').textContent = '≈ '+fmtEGP(funded*EGP());
+  document.getElementById('sp-spent').textContent = fmtUSD(spent);
+  document.getElementById('sp-spent-egp').textContent = '≈ '+fmtEGP(spent*EGP());
+  document.getElementById('sp-count').textContent = list.length;
+}
+
+function renderSpending() {
+  const body = document.getElementById('sp-body');
+  const mk = getVM('sp-month-view');
+  const query = document.getElementById('sp-search').value.trim().toLowerCase();
+  const fType = document.getElementById('sp-filter-type').value;
+  const fCat = document.getElementById('sp-filter-cat').value;
+  const fCur = document.getElementById('sp-filter-cur').value;
+
+  let list = filterByMonth(spending, mk);
+  if (fType !== 'All') list = list.filter(t => t.type === fType);
+  if (fCat !== 'All') list = list.filter(t => t.cat === fCat);
+  if (fCur !== 'All') list = list.filter(t => t.cur === fCur);
+  if (query) list = list.filter(t =>
+    (t.note||'').toLowerCase().includes(query) ||
+    (t.cat||'').toLowerCase().includes(query) ||
+    (t.date||'').includes(query)
+  );
+
+  document.getElementById('sp-results-count').textContent = query || fType!=='All' || fCat!=='All' || fCur!=='All' ? list.length+' result'+(list.length!==1?'s':'') : '';
+
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="10" class="empty-state">'+(query?'No results for "'+query+'"':'No transactions for this month')+'</td></tr>';
+    return;
+  }
+
+  // Running balance calculation
+  const allSorted = [...spending].sort((a,b) => {
+    const toMs = d => { try { const p=d.split('/'); return new Date('20'+p[2],p[1]-1,p[0]).getTime(); } catch(e){return 0;} };
+    return toMs(a.date) - toMs(b.date);
+  });
+  let startBal = 0;
+  allSorted.forEach(t => {
+    try {
+      const k = dateToMonthKey(t.date);
+      if (k < mk) startBal += t.type==='fund' ? t.amtUSD : -t.amtUSD;
+    } catch(e) {}
+  });
+
+  let run = startBal;
+  const rows = list.map(t => {
+    run += t.type==='fund' ? t.amtUSD : -t.amtUSD;
+    const ac = t.type==='fund' ? 'var(--green)' : 'var(--red)';
+    const bc = run < 0 ? 'var(--red)' : 'var(--green)';
+    const sg = t.type==='fund' ? '+' : '-';
+    const tt = t.type==='fund' ? '<span class="tag t-fund">Fund</span>' : '<span class="tag t-spend">Spend</span>';
+    const cc = `<span class="tag ${curCls(t.cur)}">${t.cur}</span>`;
+    const idx = spending.indexOf(t);
+    const noteDisplay = query ? highlight(t.note||'', query) : (t.note||'');
+    const catDisplay = query ? highlight(t.type==='fund'?'—':(t.cat||''), query) : (t.type==='fund'?'—':(t.cat||''));
+    return `<tr>
+      <td style="color:var(--muted);">${t.date}</td>
+      <td>${tt}</td>
+      <td style="color:var(--muted);">${catDisplay}</td>
+      <td style="font-weight:600;color:${ac};">${sg}${fmtOrig(t.amtOrig,t.cur)}</td>
+      <td>${cc}</td>
+      <td style="color:var(--muted);">${sg}${fmtUSD(t.amtUSD)}</td>
+      <td style="color:var(--muted);">${sg}${fmtEGP(t.amtUSD*EGP())}</td>
+      <td style="font-weight:600;color:${bc};">${fmtUSD(run)}</td>
+      <td style="color:var(--muted);">${noteDisplay}</td>
+      <td><button class="btn-del" onclick="delSpend(${idx})">x</button></td>
+    </tr>`;
+  }).reverse().join('');
+  body.innerHTML = rows;
+}
+
+function addFund() {
+  const amt = parseFloat(document.getElementById('f-amount').value);
+  const cur = document.getElementById('f-cur').value;
+  const note = document.getElementById('f-note').value.trim();
+  if (!amt || amt<=0) return;
+  spending.push({type:'fund', amtOrig:amt, amtUSD:toUSD(amt,cur), cur, cat:'', note, date:today()});
+  document.getElementById('f-amount').value='';
+  document.getElementById('f-note').value='';
+  pushData();
+}
+
+function addSpend() {
+  const amt = parseFloat(document.getElementById('sp-amount').value);
+  const cur = document.getElementById('sp-cur').value;
+  const note = document.getElementById('sp-note').value.trim();
+  const cat = document.getElementById('sp-cat').value;
+  const warn = document.getElementById('sp-warn');
+  if (!amt || amt<=0) return;
+  const amtUSD = toUSD(amt, cur);
+  if (amtUSD > getBalanceUSD()+0.001) {
+    warn.style.display='block'; setTimeout(()=>warn.style.display='none',2500); return;
+  }
+  warn.style.display='none';
+  spending.push({type:'spend', amtOrig:amt, amtUSD, cur, cat, note, date:today()});
+  document.getElementById('sp-amount').value='';
+  document.getElementById('sp-note').value='';
+  pushData();
+}
+
+function delSpend(i) {
+  if (!confirm('Delete this transaction?')) return;
+  spending.splice(i, 1);
+  pushData();
+}
+
+function clearCurrentSpending() {
+  const mk = getVM('sp-month-view');
+  if (!confirm('Clear all transactions for '+monthLabel(mk)+'?')) return;
+  spending = spending.filter(s => dateToMonthKey(s.date) !== mk);
+  pushData();
+}
+
+// ─── CLOSE MONTH ──────────────────────────────────
+function closeMonth(type) {
+  if (type === 'sales') {
+    const mk = getVM('s-month-view');
+    const list = filterByMonth(sales, mk);
+    if (!list.length) { alert('No sales to archive for this month.'); return; }
+    if (!confirm('Archive '+monthLabel(mk)+' sales? ('+list.length+' records)')) return;
+    const rev = list.reduce((s,t)=>s+t.priceUSD,0);
+    const profit = list.reduce((s,t)=>s+t.profit,0);
+    const cost = list.reduce((s,t)=>s+(t.costUSD||0),0);
+    const days = daysInMonth(mk);
+    const entry = {monthKey:mk, label:monthLabel(mk), type:'sales', entries:list,
+      stats:{rev, profit, cost, count:list.length, ppd:profit/days, days}};
+    const ex = salesArchive.findIndex(a=>a.monthKey===mk);
+    if (ex>=0) salesArchive[ex]=entry; else salesArchive.push(entry);
+    salesArchive.sort((a,b)=>b.monthKey.localeCompare(a.monthKey));
+    pushArchive();
+  } else {
+    const mk = getVM('sp-month-view');
+    const list = filterByMonth(spending, mk);
+    if (!list.length) { alert('No transactions to archive for this month.'); return; }
+    if (!confirm('Archive '+monthLabel(mk)+' spending? ('+list.length+' records)')) return;
+    const funded = getTotalFundedUSD(list);
+    const spent = getTotalSpentUSD(list);
+    const entry = {monthKey:mk, label:monthLabel(mk), type:'spend', entries:list,
+      stats:{funded, spent, count:list.length, fundedEGP:funded*EGP(), spentEGP:spent*EGP()}};
+    const ex = spendArchive.findIndex(a=>a.monthKey===mk);
+    if (ex>=0) spendArchive[ex]=entry; else spendArchive.push(entry);
+    spendArchive.sort((a,b)=>b.monthKey.localeCompare(a.monthKey));
+    pushArchive();
+  }
+}
+
+// ─── ARCHIVE ──────────────────────────────────────
+function renderArchive() {
+  const tp = salesArchive.reduce((s,a)=>s+a.stats.profit,0) + sales.reduce((s,t)=>s+t.profit,0);
+  const ts = spendArchive.reduce((s,a)=>s+a.stats.spent,0);
+  document.getElementById('arch-total-profit').textContent = fmtUSD(tp);
+  document.getElementById('arch-total-spend').textContent = fmtUSD(ts);
+  const sb = document.getElementById('arch-sales-body');
+  sb.innerHTML = !salesArchive.length ? '<tr><td colspan="6" class="empty-state">No archived months yet</td></tr>' :
+    salesArchive.map(a=>`<tr>
+      <td><span class="badge-month">${a.label}</span></td>
+      <td>${a.stats.count}</td><td>${fmtUSD(a.stats.rev)}</td>
+      <td style="color:var(--green);font-weight:600;">${fmtUSD(a.stats.profit)}</td>
+      <td style="color:var(--red);">${fmtUSD(a.stats.cost)}</td>
+      <td style="color:var(--amber);">${fmtUSD(a.stats.ppd)}/day</td>
+    </tr>`).join('');
+  const spb = document.getElementById('arch-spend-body');
+  spb.innerHTML = !spendArchive.length ? '<tr><td colspan="6" class="empty-state">No archived months yet</td></tr>' :
+    spendArchive.map(a=>`<tr>
+      <td><span class="badge-month">${a.label}</span></td>
+      <td style="color:var(--green);">${fmtUSD(a.stats.funded)}</td>
+      <td style="color:var(--green);">${fmtEGP(a.stats.fundedEGP)}</td>
+      <td style="color:var(--red);">${fmtUSD(a.stats.spent)}</td>
+      <td style="color:var(--red);">${fmtEGP(a.stats.spentEGP)}</td>
+      <td>${a.stats.count}</td>
+    </tr>`).join('');
+}
+
+function renderModalArchive(id) {
+  if (id==='modal-sales-archive') {
+    const el = document.getElementById('modal-sales-archive-body');
+    if (!salesArchive.length) { el.innerHTML='<p style="color:var(--muted);font-size:13px;">No archived months.</p>'; return; }
+    el.innerHTML = salesArchive.map(a=>`
+      <div style="margin-bottom:18px;">
+        <p style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--amber);">${a.label} — ${a.stats.count} sales · Profit: ${fmtUSD(a.stats.profit)} · ${fmtUSD(a.stats.ppd)}/day</p>
+        <table class="archive-table"><thead><tr><th>Date</th><th>Ref</th><th>Site</th><th>Price</th><th>Cost</th><th>Profit</th></tr></thead>
+        <tbody>${(a.entries||[]).map(t=>`<tr>
+          <td>${t.date}</td><td>${t.ref||'—'}</td>
+          <td><span class="tag ${siteCls(t.site)}">${t.site}</span></td>
+          <td>${fmtOrig(t.priceOrig,t.cur)}</td>
+          <td>${t.costUSD!==null&&t.costUSD!==undefined?fmtUSD(t.costUSD):'—'}</td>
+          <td style="color:${t.profit>=0?'var(--green)':'var(--red)'};">${fmtUSD(t.profit)}</td>
+        </tr>`).join('')}</tbody></table>
+      </div>`).join('<hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">');
+  } else {
+    const el = document.getElementById('modal-spend-archive-body');
+    if (!spendArchive.length) { el.innerHTML='<p style="color:var(--muted);font-size:13px;">No archived months.</p>'; return; }
+    el.innerHTML = spendArchive.map(a=>`
+      <div style="margin-bottom:18px;">
+        <p style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--amber);">${a.label} — Funded: ${fmtUSD(a.stats.funded)} · Spent: ${fmtUSD(a.stats.spent)}</p>
+        <table class="archive-table"><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Amount</th><th>USD</th><th>EGP</th><th>Note</th></tr></thead>
+        <tbody>${(a.entries||[]).map(t=>`<tr>
+          <td>${t.date}</td>
+          <td>${t.type==='fund'?'<span class="tag t-fund">Fund</span>':'<span class="tag t-spend">Spend</span>'}</td>
+          <td>${t.type==='fund'?'—':t.cat}</td>
+          <td>${fmtOrig(t.amtOrig,t.cur)}</td>
+          <td>${fmtUSD(t.amtUSD)}</td>
+          <td>${fmtEGP(t.amtUSD*EGP())}</td>
+          <td style="color:var(--muted);">${t.note||''}</td>
+        </tr>`).join('')}</tbody></table>
+      </div>`).join('<hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">');
+  }
+}
+
+// ─── EXPORT / IMPORT ──────────────────────────────
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+  const sr = [['Date','Ref','Site','Currency','Sell Price','Cost $','Profit $']];
+  sales.forEach(t => sr.push([t.date,t.ref||'',t.site,t.cur,t.priceOrig,t.costUSD??'',t.profit]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sr),'Sales');
+  const spr = [['Date','Type','Category','Amount','Currency','Amount USD','Note']];
+  spending.forEach(t => spr.push([t.date,t.type,t.cat||'',t.amtOrig,t.cur,t.amtUSD,t.note||'']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(spr),'Spending');
+  salesArchive.forEach(a=>{
+    const r=[['Date','Ref','Site','Currency','Sell Price','Cost $','Profit $']];
+    (a.entries||[]).forEach(t=>r.push([t.date,t.ref||'',t.site,t.cur,t.priceOrig,t.costUSD??'',t.profit]));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r),'Sales '+a.label);
+  });
+  spendArchive.forEach(a=>{
+    const r=[['Date','Type','Category','Amount','Currency','Amount USD','Note']];
+    (a.entries||[]).forEach(t=>r.push([t.date,t.type,t.cat||'',t.amtOrig,t.cur,t.amtUSD,t.note||'']));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r),'Spend '+a.label);
+  });
+  const d = new Date();
+  XLSX.writeFile(wb, `money_hub_${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}.xlsx`);
+}
+
+function importExcel(event) {
+  const file = event.target.files[0]; if(!file) return;
+  if (!confirm('Import will REPLACE current Sales & Spending (archives kept). Continue?')) { event.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const wb = XLSX.read(e.target.result,{type:'binary'});
+    const ss = wb.Sheets['Sales'];
+    if(ss){
+      const rows = XLSX.utils.sheet_to_json(ss,{header:1});
+      sales = rows.slice(1).filter(r=>r[0]).map(r=>({
+        date:sanitizeDate(r[0]),ref:String(r[1]||''),site:r[2]||'Other',cur:r[3]||'USD',
+        priceOrig:parseFloat(r[4])||0,priceUSD:toUSD(parseFloat(r[4])||0,r[3]||'USD'),
+        costUSD:r[5]!==''&&r[5]!==undefined?parseFloat(r[5]):null,profit:parseFloat(r[6])||0
+      }));
+    }
+    const sp = wb.Sheets['Spending'];
+    if(sp){
+      const rows = XLSX.utils.sheet_to_json(sp,{header:1});
+      spending = rows.slice(1).filter(r=>r[0]).map(r=>({
+        date:sanitizeDate(r[0]),type:r[1]||'spend',cat:r[2]||'',
+        amtOrig:parseFloat(r[3])||0,cur:r[4]||'USD',amtUSD:parseFloat(r[5])||0,note:r[6]||''
+      }));
+    }
+    await pushData();
+    alert('Import successful!');
+  };
+  reader.readAsBinaryString(file);
+  event.target.value='';
+}
+
+// ─── RERENDER ─────────────────────────────────────
+function rerender() {
+  populateMonthSelectors();
+  renderSalesStats(); renderSales();
+  renderSpendStats(); renderSpending();
+  renderArchive();
+}
+
+// ─── INIT ─────────────────────────────────────────
+(async function init() {
+  loadLocal();
+  document.getElementById('loading-text').textContent = 'Loading cached data...';
+  rerender();
+  document.getElementById('loading-text').textContent = 'Syncing with Google Sheets...';
+  await syncAll(false);
+  document.getElementById('loading').style.display = 'none';
+})();
+</script>
+</body>
+</html>
