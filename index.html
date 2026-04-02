@@ -5,11 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Money Hub</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230e0f11'/%3E%3Ctext x='32' y='47' font-size='42' text-anchor='middle' fill='%234ade80' font-family='serif' font-weight='bold'%3E%24%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Money Hub">
+<meta name="theme-color" content="#0e0f11">
+<script>
+// Generate apple touch icon dynamically via canvas and inject it
+(function(){
+  try {
+    var c = document.createElement('canvas');
+    c.width = 180; c.height = 180;
+    var ctx = c.getContext('2d');
+    // Background with rounded corners
+    var r = 40;
+    ctx.beginPath();
+    ctx.moveTo(r,0); ctx.lineTo(180-r,0);
+    ctx.quadraticCurveTo(180,0,180,r);
+    ctx.lineTo(180,180-r);
+    ctx.quadraticCurveTo(180,180,180-r,180);
+    ctx.lineTo(r,180);
+    ctx.quadraticCurveTo(0,180,0,180-r);
+    ctx.lineTo(0,r);
+    ctx.quadraticCurveTo(0,0,r,0);
+    ctx.closePath();
+    ctx.fillStyle = '#0e0f11';
+    ctx.fill();
+    // Dollar sign
+    ctx.fillStyle = '#4ade80';
+    ctx.font = 'bold 110px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('$', 90, 96);
+    var url = c.toDataURL('image/png');
+    var link = document.createElement('link');
+    link.rel = 'apple-touch-icon';
+    link.href = url;
+    document.head.appendChild(link);
+    // Also set as shortcut icon for android
+    var link2 = document.createElement('link');
+    link2.rel = 'shortcut icon';
+    link2.href = url;
+    document.head.appendChild(link2);
+  } catch(e){}
+})();
+<\/script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap');
 :root{
-  --bg:#0e0f11;--surface:#16181c;--surface2:#1e2128;
+  --bg:#0c0d14;--surface:#13141e;--surface2:#1a1b28;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
   --text:#f0f0ee;--muted:#7a7e89;--hint:#454950;
   --green:#4ade80;--green-bg:rgba(74,222,128,0.08);--green-border:rgba(74,222,128,0.2);
@@ -21,8 +66,8 @@
   --accent:#4ade80;--r:8px;--rl:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;}
-.header{padding:16px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+body{background:#0c0d14;color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;position:relative;overflow-x:hidden;}
+.header{padding:16px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}.header-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
 .logo{font-size:19px;font-weight:700;letter-spacing:-0.5px;display:flex;align-items:center;gap:10px;}
 .logo-dot{width:9px;height:9px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
@@ -35,11 +80,11 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 .rate-item{display:flex;align-items:center;gap:5px;}
 .rate-item input{width:58px;height:27px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--amber);font-family:'DM Mono',monospace;font-size:12px;padding:0 6px;outline:none;}
 .rate-item input:focus{border-color:var(--accent);}
-.tabs{display:flex;padding:0 28px;border-bottom:1px solid var(--border);}
+.tabs{display:flex;padding:0 28px;border-bottom:1px solid var(--border);}.tabs-inner{max-width:1100px;margin:0 auto;display:flex;}
 .tab{padding:12px 20px;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:0.3px;transition:color 0.15s;}
 .tab.active{color:var(--text);border-bottom-color:var(--accent);}
 .tab:hover{color:var(--text);}
-.content{padding:20px 28px;max-width:1200px;}
+.content{padding:20px 28px;max-width:1100px;margin:0 auto;}
 .pane{display:none;}.pane.active{display:block;}
 .metrics-grid{display:grid;gap:10px;margin-bottom:12px;}
 .g2{grid-template-columns:repeat(2,1fr);}.g3{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(4,1fr);}.g5{grid-template-columns:repeat(5,1fr);}
@@ -67,8 +112,6 @@ button:active{transform:scale(0.97);}
 .btn-amber:hover{background:rgba(251,191,36,0.15);}
 .btn-blue{background:var(--blue-bg);border-color:rgba(96,165,250,0.3);color:var(--blue);}
 .btn-blue:hover{background:rgba(96,165,250,0.15);}
-.btn-del{border-color:var(--red-border);color:var(--red);height:22px;padding:0 9px;font-size:10px;background:transparent;}
-.btn-del:hover{background:var(--red-bg);}
 .btn-sm{height:28px;font-size:12px;padding:0 11px;}
 .tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:0.3px;}
 .t-fund{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
@@ -101,6 +144,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .modal h3{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text);}
 .modal-close{float:right;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;background:none;border:none;padding:0;}
 .modal-close:hover{color:var(--text);}
+.header-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.tabs-inner{max-width:1100px;margin:0 auto;display:flex;}
+.btn-edit{border-color:rgba(96,165,250,0.3) !important;color:var(--blue) !important;height:22px !important;width:22px !important;min-width:22px !important;padding:0 !important;font-size:11px !important;line-height:1 !important;text-align:center;background:transparent !important;margin-right:0;border-radius:4px !important;display:inline-flex !important;align-items:center;justify-content:center;}
+.btn-edit:hover{background:var(--blue-bg) !important;}
+.btn-del{border-color:var(--red-border) !important;color:var(--red) !important;height:22px !important;width:22px !important;min-width:22px !important;padding:0 !important;font-size:10px !important;line-height:1 !important;background:transparent !important;border-radius:4px !important;display:inline-flex !important;align-items:center;justify-content:center;}
+.btn-del:hover{background:var(--red-bg) !important;}
+.btn-del.btn-sm{height:28px !important;width:auto !important;min-width:auto !important;padding:0 11px !important;border-radius:var(--r) !important;font-size:12px !important;display:inline-flex !important;}
+.action-cell{display:flex;gap:4px;align-items:center;}
 .archive-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'DM Mono',monospace;}
 .archive-table th{text-align:left;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border2);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;}
 .archive-table td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text);}
@@ -118,6 +169,56 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   .g4,.g5{grid-template-columns:repeat(2,1fr);}
   .g3{grid-template-columns:repeat(2,1fr);}
 }
+
+/* ── RAMMPAGE BACKGROUND ── */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(120,60,220,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(90,30,180,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(180,120,0,0.07) 0%, transparent 60%);
+}
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(120,60,220,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120,60,220,0.04) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 100% 100% at 50% 0%, black 20%, transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 50% 0%, black 20%, transparent 80%);
+}
+.header,.tabs,.content,.modal-bg{position:relative;z-index:1;}
+/* Gold shimmer on header border */
+.header{border-bottom:1px solid rgba(180,130,20,0.18);}
+.tabs{border-bottom:1px solid rgba(180,130,20,0.12);}
+/* Purple glow on active tab */
+.tab.active{color:var(--text);border-bottom-color:#a78bfa;text-shadow:0 0 12px rgba(167,139,250,0.4);}
+/* Cards get a subtle purple-tinted border */
+.card{border:1px solid rgba(120,60,220,0.15);}
+.metric{border:1px solid rgba(120,60,220,0.12);}
+/* Gold accent on metric hover line */
+.metric::before{background:linear-gradient(90deg,transparent,rgba(200,150,30,0.6),transparent);}
+/* Sync status glow */
+.sync-dot.ok{background:var(--green);box-shadow:0 0 6px rgba(74,222,128,0.5);}
+.sync-dot.syncing{box-shadow:0 0 6px rgba(251,191,36,0.5);}
+/* Logo gold shimmer */
+.logo-text{background:linear-gradient(135deg,#f0f0ee 40%,#d4a820 60%,#f0f0ee 80%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 4s linear infinite;}
+@keyframes shimmer{0%{background-position:200% center;}100%{background-position:-200% center;}}
+/* Keep logo-dot visible */
+.logo-dot{-webkit-text-fill-color:initial !important;background:#4ade80 !important;flex-shrink:0;}
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(120,60,220,0.3);border-radius:2px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(167,139,250,0.5);}
 </style>
 </head>
 <body>
@@ -128,12 +229,13 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 </div>
 
 <div class="header">
+<div class="header-inner">
   <div class="logo">
     <svg width="22" height="22" viewBox="0 0 64 64" style="border-radius:6px;flex-shrink:0;">
       <rect width="64" height="64" rx="10" fill="#0e0f11"/>
       <text x="32" y="47" font-size="42" text-anchor="middle" fill="#4ade80" font-family="serif" font-weight="bold">$</text>
     </svg>
-    Money Hub
+    <span class="logo-text">Money Hub</span>
     <div class="logo-dot"></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -151,11 +253,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
   </div>
 </div>
+</div>
 
 <div class="tabs">
+<div class="tabs-inner">
   <button class="tab active" onclick="switchTab('sales')">Sales</button>
   <button class="tab" onclick="switchTab('spending')">Spending</button>
   <button class="tab" onclick="switchTab('archive')">Archive</button>
+</div>
 </div>
 
 <div class="content">
@@ -232,7 +337,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         <thead><tr>
           <th style="width:68px;">Date</th><th style="width:130px;">Ref</th><th style="width:90px;">Site</th>
           <th style="width:52px;">Cur</th><th style="width:82px;">Price</th><th style="width:72px;">Cost</th>
-          <th style="width:78px;">Profit</th><th style="width:34px;"></th>
+          <th style="width:78px;">Profit</th><th style="width:58px;"></th>
         </tr></thead>
         <tbody id="sales-body"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody>
       </table>
@@ -324,7 +429,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         <thead><tr>
           <th style="width:65px;">Date</th><th style="width:58px;">Type</th><th style="width:82px;">Category</th>
           <th style="width:88px;">Amount</th><th style="width:50px;">Cur</th><th style="width:76px;">In USD</th>
-          <th style="width:76px;">In EGP</th><th style="width:86px;">Balance $</th><th>Note</th><th style="width:34px;"></th>
+          <th style="width:76px;">In EGP</th><th style="width:86px;">Balance $</th><th>Note</th><th style="width:58px;"></th>
         </tr></thead>
         <tbody id="sp-body"><tr><td colspan="10" class="empty-state">Loading...</td></tr></tbody>
       </table>
@@ -794,7 +899,7 @@ function renderSales() {
       <td>${fmtOrig(t.priceOrig, t.cur)}</td>
       <td style="color:var(--muted);">${t.costUSD!==null&&t.costUSD!==undefined ? fmtUSD(t.costUSD) : '—'}</td>
       <td style="font-weight:600;color:${pc};">${fmtUSD(t.profit)}</td>
-      <td><button class="btn-del" onclick="delSale(${idx})">x</button></td>
+      <td style="overflow:visible;"><div class="action-cell"><button class="btn-edit" title="Edit" onclick="openEditSale(${idx})">✎</button><button class="btn-del" title="Delete" onclick="delSale(${idx})">x</button></div></td>
     </tr>`;
   }).join('');
 }
@@ -896,7 +1001,7 @@ function renderSpending() {
       <td style="color:var(--muted);">${sg}${fmtEGP(t.amtUSD*EGP())}</td>
       <td style="font-weight:600;color:${bc};">${fmtUSD(run)}</td>
       <td style="color:var(--muted);">${noteDisplay}</td>
-      <td><button class="btn-del" onclick="delSpend(${idx})">x</button></td>
+      <td style="overflow:visible;"><div class="action-cell"><button class="btn-edit" title="Edit" onclick="openEditSpend(${idx})">✎</button><button class="btn-del" title="Delete" onclick="delSpend(${idx})">x</button></div></td>
     </tr>`;
   }).reverse().join('');
   body.innerHTML = rows;
@@ -1093,6 +1198,101 @@ function importExcel(event) {
   event.target.value='';
 }
 
+// ─── EDIT SALE ────────────────────────────────────
+function openEditSale(i) {
+  const t = sales[i];
+  if (!t) return;
+  document.getElementById('es-date').value = t.date || '';
+  document.getElementById('es-ref').value = t.ref || '';
+  document.getElementById('es-site').value = t.site || 'Eldorado';
+  document.getElementById('es-cur').value = t.cur || 'USD';
+  document.getElementById('es-price').value = t.priceOrig || '';
+  document.getElementById('es-cost').value = t.costUSD !== null && t.costUSD !== undefined ? t.costUSD : '';
+  document.getElementById('es-profit').value = t.profit !== undefined ? t.profit : '';
+  document.getElementById('es-warn').style.display = 'none';
+  // Store index in a dataset
+  document.getElementById('modal-edit-sale').dataset.idx = i;
+  openModal('modal-edit-sale');
+}
+
+function saveEditSale() {
+  const i = parseInt(document.getElementById('modal-edit-sale').dataset.idx);
+  const price = parseFloat(document.getElementById('es-price').value);
+  const profitRaw = document.getElementById('es-profit').value;
+  const warn = document.getElementById('es-warn');
+  if (!price || isNaN(price) || profitRaw === '') {
+    warn.style.display = 'block'; return;
+  }
+  warn.style.display = 'none';
+  const cur = document.getElementById('es-cur').value;
+  const costRaw = document.getElementById('es-cost').value;
+  sales[i] = {
+    date: sanitizeDate(document.getElementById('es-date').value) || today(),
+    ref: document.getElementById('es-ref').value.trim(),
+    site: document.getElementById('es-site').value,
+    cur,
+    priceOrig: price,
+    priceUSD: toUSD(price, cur),
+    costUSD: costRaw !== '' ? parseFloat(costRaw) : null,
+    profit: parseFloat(profitRaw)
+  };
+  closeModal('modal-edit-sale');
+  pushData();
+}
+
+function deleteFromEditSale() {
+  const i = parseInt(document.getElementById('modal-edit-sale').dataset.idx);
+  if (!confirm('Delete this sale?')) return;
+  closeModal('modal-edit-sale');
+  sales.splice(i, 1);
+  pushData();
+}
+
+// ─── EDIT SPENDING ────────────────────────────────
+function openEditSpend(i) {
+  const t = spending[i];
+  if (!t) return;
+  document.getElementById('esp-date').value = t.date || '';
+  document.getElementById('esp-type').value = t.type || 'spend';
+  document.getElementById('esp-cat').value = t.cat || '';
+  document.getElementById('esp-amount').value = t.amtOrig || '';
+  document.getElementById('esp-cur').value = t.cur || 'USD';
+  document.getElementById('esp-note').value = t.note || '';
+  document.getElementById('esp-warn').style.display = 'none';
+  document.getElementById('modal-edit-spend').dataset.idx = i;
+  openModal('modal-edit-spend');
+}
+
+function saveEditSpend() {
+  const i = parseInt(document.getElementById('modal-edit-spend').dataset.idx);
+  const amt = parseFloat(document.getElementById('esp-amount').value);
+  const warn = document.getElementById('esp-warn');
+  if (!amt || isNaN(amt)) {
+    warn.style.display = 'block'; return;
+  }
+  warn.style.display = 'none';
+  const cur = document.getElementById('esp-cur').value;
+  spending[i] = {
+    date: sanitizeDate(document.getElementById('esp-date').value) || today(),
+    type: document.getElementById('esp-type').value,
+    cat: document.getElementById('esp-cat').value,
+    amtOrig: amt,
+    amtUSD: toUSD(amt, cur),
+    cur,
+    note: document.getElementById('esp-note').value.trim()
+  };
+  closeModal('modal-edit-spend');
+  pushData();
+}
+
+function deleteFromEditSpend() {
+  const i = parseInt(document.getElementById('modal-edit-spend').dataset.idx);
+  if (!confirm('Delete this transaction?')) return;
+  closeModal('modal-edit-spend');
+  spending.splice(i, 1);
+  pushData();
+}
+
 // ─── RERENDER ─────────────────────────────────────
 function rerender() {
   populateMonthSelectors();
@@ -1143,5 +1343,120 @@ setInterval(() => {
   document.getElementById('loading').style.display = 'none';
 })();
 </script>
+
+<!-- Edit Sale Modal -->
+<div class="modal-bg" id="modal-edit-sale">
+  <div class="modal" style="min-width:320px;max-width:500px;width:90vw;">
+    <button class="modal-close" onclick="closeModal('modal-edit-sale')">&#x2715;</button>
+    <h3 style="margin-bottom:16px;">Edit sale</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Date (DD/MM/YY)</label>
+        <input type="text" id="es-date" placeholder="DD/MM/YY" style="width:100%;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Ref</label>
+        <input type="text" id="es-ref" placeholder="Ref code" style="width:100%;">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Site</label>
+          <select id="es-site" style="width:100%;">
+            <option value="Eldorado">Eldorado</option>
+            <option value="Eloboost24">Eloboost24</option>
+            <option value="GameBoost">GameBoost</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Currency</label>
+          <select id="es-cur" style="width:100%;">
+            <option value="USD">$ USD</option>
+            <option value="EUR">&euro; EUR</option>
+            <option value="EGP">LE EGP</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Sell price</label>
+          <input type="number" id="es-price" placeholder="Sell price" style="width:100%;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Cost $</label>
+          <input type="number" id="es-cost" placeholder="Cost" style="width:100%;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Profit $</label>
+          <input type="number" id="es-profit" placeholder="Profit" style="width:100%;">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn-g" style="flex:2;" onclick="saveEditSale()">Save changes</button>
+        <button onclick="closeModal('modal-edit-sale')" style="flex:1;">Cancel</button>
+        <button class="btn-r" style="flex:1;" onclick="deleteFromEditSale()">Delete</button>
+      </div>
+      <div class="warn" id="es-warn">Please fill in sell price and profit.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Spending Modal -->
+<div class="modal-bg" id="modal-edit-spend">
+  <div class="modal" style="min-width:320px;max-width:500px;width:90vw;">
+    <button class="modal-close" onclick="closeModal('modal-edit-spend')">&#x2715;</button>
+    <h3 style="margin-bottom:16px;">Edit transaction</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Date (DD/MM/YY)</label>
+        <input type="text" id="esp-date" placeholder="DD/MM/YY" style="width:100%;">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Type</label>
+          <select id="esp-type" style="width:100%;">
+            <option value="fund">Fund</option>
+            <option value="spend">Spend</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Category</label>
+          <select id="esp-cat" style="width:100%;">
+            <option value="">&#8212;</option>
+            <option value="Cost">Cost</option>
+            <option value="Tools">Tools</option>
+            <option value="Withdraw">Withdraw</option>
+            <option value="Food">Food</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Amount</label>
+          <input type="number" id="esp-amount" placeholder="Amount" style="width:100%;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Currency</label>
+          <select id="esp-cur" style="width:100%;">
+            <option value="USD">$ USD</option>
+            <option value="EUR">&euro; EUR</option>
+            <option value="EGP">LE EGP</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Note</label>
+        <input type="text" id="esp-note" placeholder="Note / description" style="width:100%;">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn-g" style="flex:2;" onclick="saveEditSpend()">Save changes</button>
+        <button onclick="closeModal('modal-edit-spend')" style="flex:1;">Cancel</button>
+        <button class="btn-r" style="flex:1;" onclick="deleteFromEditSpend()">Delete</button>
+      </div>
+      <div class="warn" id="esp-warn">Please fill in amount.</div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
