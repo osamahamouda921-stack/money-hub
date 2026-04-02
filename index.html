@@ -1101,6 +1101,37 @@ function rerender() {
   renderArchive();
 }
 
+// ─── AUTO SYNC ────────────────────────────────────
+let lastSyncTime = 0;
+const SYNC_COOLDOWN = 30000; // don't sync more than once per 30s
+
+async function autoSync() {
+  const now = Date.now();
+  if (isSyncing) return;
+  if (now - lastSyncTime < SYNC_COOLDOWN) return;
+  lastSyncTime = now;
+  await syncAll(false);
+}
+
+// Sync when tab becomes visible again (switching back from another tab)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    autoSync();
+  }
+});
+
+// Sync when window gets focus (clicking back on browser window)
+window.addEventListener('focus', () => {
+  autoSync();
+});
+
+// Background sync every 2 minutes while tab is open
+setInterval(() => {
+  if (document.visibilityState === 'visible') {
+    autoSync();
+  }
+}, 120000);
+
 // ─── INIT ─────────────────────────────────────────
 (async function init() {
   loadLocal();
@@ -1108,6 +1139,7 @@ function rerender() {
   rerender();
   document.getElementById('loading-text').textContent = 'Syncing with Google Sheets...';
   await syncAll(false);
+  lastSyncTime = Date.now();
   document.getElementById('loading').style.display = 'none';
 })();
 </script>
