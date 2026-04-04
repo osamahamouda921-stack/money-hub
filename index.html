@@ -274,7 +274,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     <div class="metric"><p class="ml">Profit</p><div class="dual-val"><span class="dv-main mv-green" id="s-profit">$0.00</span><span class="dv-sub" id="s-profit-egp">≈ E£0</span></div></div>
     <div class="metric"><p class="ml">Cost</p><div class="dual-val"><span class="dv-main mv-red" id="s-cost-total">$0.00</span><span class="dv-sub" id="s-cost-egp">≈ E£0</span></div></div>
     <div class="metric"><p class="ml">Sales</p><p class="mv" id="s-count">0</p><p class="mv2" id="s-margin">Margin: —</p></div>
-    <div class="metric"><p class="ml">Profit / Day</p><div class="dual-val"><span class="dv-main mv-amber" id="s-per-day">$0.00</span><span class="dv-sub" id="s-per-day-sub"></span></div></div>
+    <div class="metric"><p class="ml">Profit / Day</p><div class="dual-val"><span class="dv-main mv-amber" id="s-per-day">$0.00</span><span class="dv-sub" id="s-per-day-egp">≈ E£0</span><span class="dv-sub" id="s-per-day-sub"></span></div></div>
   </div>
   <div class="metrics-grid g2" style="margin-bottom:4px;">
     <div class="metric">
@@ -1000,7 +1000,9 @@ function renderSalesStats() {
   document.getElementById('s-cost-egp').textContent = '≈ ' + fmtEGP(cost * EGP());
   document.getElementById('s-count').textContent = list.length;
   document.getElementById('s-margin').textContent = 'Margin: ' + margin.toFixed(1) + '%';
-  document.getElementById('s-per-day').textContent = fmtUSD(days>0 ? profit/days : 0);
+  const ppd = days > 0 ? profit/days : 0;
+  document.getElementById('s-per-day').textContent = fmtUSD(ppd);
+  document.getElementById('s-per-day-egp').textContent = '≈ ' + fmtEGP(ppd * EGP());
   document.getElementById('s-per-day-sub').textContent = 'over '+days+' day'+(days!==1?'s':'');
 
   // Monthly goal
