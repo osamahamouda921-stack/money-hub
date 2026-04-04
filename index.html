@@ -269,7 +269,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
       <button class="btn-blue btn-sm" onclick="openModal('modal-sales-archive')">View Archive</button>
     </div>
   </div>
-  <div class="metrics-grid g5" style="margin-bottom:10px;">
+  <div class="metrics-grid g5">
     <div class="metric"><p class="ml">Revenue</p><div class="dual-val"><span class="dv-main" id="s-rev">$0.00</span><span class="dv-sub" id="s-rev-egp">≈ E£0</span></div></div>
     <div class="metric"><p class="ml">Profit</p><div class="dual-val"><span class="dv-main mv-green" id="s-profit">$0.00</span><span class="dv-sub" id="s-profit-egp">≈ E£0</span></div></div>
     <div class="metric"><p class="ml">Cost</p><div class="dual-val"><span class="dv-main mv-red" id="s-cost-total">$0.00</span><span class="dv-sub" id="s-cost-egp">≈ E£0</span></div></div>
@@ -1005,7 +1005,9 @@ function renderSalesStats() {
   document.getElementById('s-cost-egp').textContent = '≈ ' + fmtEGP(cost * EGP());
   document.getElementById('s-count').textContent = list.length;
   document.getElementById('s-margin').textContent = 'Margin: ' + margin.toFixed(1) + '%';
-  document.getElementById('s-per-day').textContent = fmtUSD(days>0 ? profit/days : 0);
+  const ppd = days > 0 ? profit / days : 0;
+  document.getElementById('s-per-day').textContent = fmtUSD(ppd);
+  document.getElementById('s-per-day-egp').textContent = '≈ ' + fmtEGP(ppd * EGP());
   document.getElementById('s-per-day-sub').textContent = 'over '+days+' day'+(days!==1?'s':'');
 
   // Monthly goal
@@ -1544,98 +1546,53 @@ function renderSalesDayChart() {
   const mk = getVM('s-month-view');
   const list = filterByMonth(sales, mk);
   const emptyMsg = document.getElementById('chart-empty-msg');
-
   if (!list.length) {
     emptyMsg.textContent = 'No sales yet this month';
     const ctx = canvas.getContext('2d');
-    canvas.width = canvas.offsetWidth || 300;
+    canvas.width = canvas.parentElement.clientWidth || 300;
     canvas.height = 52;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     return;
   }
   emptyMsg.textContent = '';
-
-  const [y, m] = mk.split('-').map(Number);
-  const totalDays = new Date(y, m, 0).getDate();
+  const [yr, mo] = mk.split('-').map(Number);
+  const totalDays = new Date(yr, mo, 0).getDate();
   const byDay = {};
-  list.forEach(t => {
-    const d = parseInt(t.date.split('/')[0]);
-    byDay[d] = (byDay[d] || 0) + t.profit;
-  });
-
+  list.forEach(t => { const d = parseInt(t.date.split('/')[0]); byDay[d] = (byDay[d]||0) + t.profit; });
   const now = new Date();
-  const isCurrent = mk === (now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0'));
+  const isCurrent = mk === (now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
   const maxDay = isCurrent ? now.getDate() : totalDays;
-  const days = Array.from({length: maxDay}, (_, i) => i + 1);
-  const values = days.map(d => byDay[d] || 0);
+  const days = Array.from({length: maxDay}, (_,i) => i+1);
+  const values = days.map(d => byDay[d]||0);
   const maxVal = Math.max(...values, 0.01);
-
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.parentElement.clientWidth - 28 || 300;
   const H = 52;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
-
-  const padL = 2, padR = 2, padT = 4, padB = 14;
-  const chartW = W - padL - padR;
-  const chartH = H - padT - padB;
-  const gap = chartW / days.length;
-  const barW = Math.max(2, gap - 1.5);
-
-  days.forEach((d, i) => {
-    const v = values[i];
-    const bh = v > 0 ? Math.max(3, (v / maxVal) * chartH) : (v < 0 ? 3 : 0);
-    const x = padL + i * gap + (gap - barW) / 2;
-    const barY = padT + chartH - bh;
-    const isToday = isCurrent && d === now.getDate();
-
-    if (v === 0) {
-      ctx.fillStyle = 'rgba(255,255,255,0.05)';
-      ctx.fillRect(x, padT + chartH - 2, barW, 2);
-      return;
-    }
-    if (v > 0) {
-      const grad = ctx.createLinearGradient(0, barY, 0, barY + bh);
-      grad.addColorStop(0, isToday ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)');
-      grad.addColorStop(1, isToday ? 'rgba(251,191,36,0.25)' : 'rgba(74,222,128,0.2)');
-      ctx.fillStyle = grad;
-    } else {
-      ctx.fillStyle = 'rgba(248,113,113,0.7)';
-    }
-    const r = Math.min(2, barW / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + r, barY);
-    ctx.lineTo(x + barW - r, barY);
-    ctx.quadraticCurveTo(x + barW, barY, x + barW, barY + r);
-    ctx.lineTo(x + barW, barY + bh);
-    ctx.lineTo(x, barY + bh);
-    ctx.lineTo(x, barY + r);
-    ctx.quadraticCurveTo(x, barY, x + r, barY);
-    ctx.fill();
+  const padL=2, padR=2, padT=4, padB=14;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  const gap=chartW/days.length, barW=Math.max(2,gap-1.5);
+  days.forEach((d,i) => {
+    const v=values[i], bh=v>0?Math.max(3,(v/maxVal)*chartH):(v<0?3:0);
+    const x=padL+i*gap+(gap-barW)/2, barY=padT+chartH-bh;
+    const isToday=isCurrent&&d===now.getDate();
+    if (v===0){ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fillRect(x,padT+chartH-2,barW,2);return;}
+    if (v>0){const g=ctx.createLinearGradient(0,barY,0,barY+bh);g.addColorStop(0,isToday?'rgba(251,191,36,0.9)':'rgba(74,222,128,0.85)');g.addColorStop(1,isToday?'rgba(251,191,36,0.25)':'rgba(74,222,128,0.2)');ctx.fillStyle=g;}
+    else{ctx.fillStyle='rgba(248,113,113,0.7)';}
+    const r=Math.min(2,barW/2);
+    ctx.beginPath();ctx.moveTo(x+r,barY);ctx.lineTo(x+barW-r,barY);ctx.quadraticCurveTo(x+barW,barY,x+barW,barY+r);ctx.lineTo(x+barW,barY+bh);ctx.lineTo(x,barY+bh);ctx.lineTo(x,barY+r);ctx.quadraticCurveTo(x,barY,x+r,barY);ctx.fill();
   });
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padL, padT + chartH);
-  ctx.lineTo(W - padR, padT + chartH);
-  ctx.stroke();
-
-  ctx.fillStyle = 'rgba(122,126,137,0.75)';
-  ctx.font = '8px DM Mono, monospace';
-  ctx.textAlign = 'center';
-  const labelEvery = days.length <= 10 ? 1 : days.length <= 20 ? 2 : 5;
-  days.forEach((d, i) => {
-    if (d === 1 || d % labelEvery === 0 || d === maxDay) {
-      ctx.fillText(d, padL + i * gap + gap / 2, H - 2);
-    }
-  });
+  ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(padL,padT+chartH);ctx.lineTo(W-padR,padT+chartH);ctx.stroke();
+  ctx.fillStyle='rgba(122,126,137,0.75)';ctx.font='8px DM Mono,monospace';ctx.textAlign='center';
+  const every=days.length<=10?1:days.length<=20?2:5;
+  days.forEach((d,i)=>{if(d===1||d%every===0||d===maxDay)ctx.fillText(d,padL+i*gap+gap/2,H-2);});
 }
+
+window.addEventListener('resize', () => renderSalesDayChart());
 
 // ─── RERENDER ─────────────────────────────────────
 function rerender() {
@@ -1677,8 +1634,6 @@ setInterval(() => {
     autoSync();
   }
 }, 120000);
-
-window.addEventListener('resize', () => renderSalesDayChart());
 
 // ─── INIT ─────────────────────────────────────────
 (async function init() {
