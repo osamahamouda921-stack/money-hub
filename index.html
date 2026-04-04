@@ -179,6 +179,30 @@ body::after{
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(120,60,220,0.3);border-radius:2px;}
 ::-webkit-scrollbar-thumb:hover{background:rgba(167,139,250,0.5);}
+/* ── WALLET STYLES ── */
+.wallet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:12px;}
+.wallet-card{background:var(--surface);border:1px solid rgba(120,60,220,0.18);border-radius:var(--rl);padding:13px 15px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.wallet-card:hover{border-color:rgba(167,139,250,0.35);}
+.wallet-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--wallet-color,#a78bfa),transparent);opacity:0.7;}
+.wallet-name{font-size:10px;color:var(--muted);letter-spacing:0.6px;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.wallet-icon{font-size:14px;}
+.wallet-bal{font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);}
+.wallet-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;}
+.wallet-warn{display:inline-block;font-size:9px;padding:1px 6px;border-radius:10px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);margin-top:4px;font-family:'DM Mono',monospace;}
+.wallet-total{background:linear-gradient(135deg,rgba(120,60,220,0.12),rgba(200,150,30,0.08));border:1px solid rgba(167,139,250,0.3);}
+/* progress bar */
+.goal-bar-wrap{background:var(--surface2);border-radius:6px;height:8px;overflow:hidden;margin-top:6px;}
+.goal-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green),#22d3ee);transition:width 0.5s ease;}
+.goal-bar-fill.warn{background:linear-gradient(90deg,var(--amber),#f97316);}
+.goal-bar-fill.danger{background:linear-gradient(90deg,var(--red),#f97316);}
+.goal-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px;}
+/* net profit metric */
+.mv-net-pos{color:#22d3ee;}
+.mv-net-neg{color:var(--red);}
+/* dual-currency metric */
+.dual-val{display:flex;flex-direction:column;gap:1px;}
+.dual-val .dv-main{font-size:18px;font-weight:700;font-family:'DM Mono',monospace;}
+.dual-val .dv-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
 /* Group filter buttons */
 .grp-btn{height:28px;padding:0 14px;font-size:12px;font-weight:600;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;font-family:'Syne',sans-serif;}
 .grp-btn:hover{background:var(--surface2);color:var(--text);}
@@ -226,6 +250,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
 <div class="tabs-inner">
   <button class="tab active" onclick="switchTab('sales')">Sales</button>
   <button class="tab" onclick="switchTab('spending')">Spending</button>
+  <button class="tab" onclick="switchTab('wallets')">Wallets</button>
   <button class="tab" onclick="switchTab('archive')">Archive</button>
 </div>
 </div>
@@ -245,11 +270,21 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     </div>
   </div>
   <div class="metrics-grid g5">
-    <div class="metric"><p class="ml">Revenue</p><p class="mv" id="s-rev">$0.00</p></div>
-    <div class="metric"><p class="ml">Profit</p><p class="mv mv-green" id="s-profit">$0.00</p></div>
-    <div class="metric"><p class="ml">Cost</p><p class="mv mv-red" id="s-cost-total">$0.00</p></div>
-    <div class="metric"><p class="ml">Sales</p><p class="mv" id="s-count">0</p></div>
-    <div class="metric"><p class="ml">Profit / Day</p><p class="mv mv-amber" id="s-per-day">$0.00</p><p class="mv2" id="s-per-day-sub"></p></div>
+    <div class="metric"><p class="ml">Revenue</p><div class="dual-val"><span class="dv-main" id="s-rev">$0.00</span><span class="dv-sub" id="s-rev-egp">≈ E£0</span></div></div>
+    <div class="metric"><p class="ml">Profit</p><div class="dual-val"><span class="dv-main mv-green" id="s-profit">$0.00</span><span class="dv-sub" id="s-profit-egp">≈ E£0</span></div></div>
+    <div class="metric"><p class="ml">Cost</p><div class="dual-val"><span class="dv-main mv-red" id="s-cost-total">$0.00</span><span class="dv-sub" id="s-cost-egp">≈ E£0</span></div></div>
+    <div class="metric"><p class="ml">Sales</p><p class="mv" id="s-count">0</p><p class="mv2" id="s-margin">Margin: —</p></div>
+    <div class="metric"><p class="ml">Profit / Day</p><div class="dual-val"><span class="dv-main mv-amber" id="s-per-day">$0.00</span><span class="dv-sub" id="s-per-day-sub"></span></div></div>
+  </div>
+  <div class="metrics-grid g2" style="margin-bottom:4px;">
+    <div class="metric">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <p class="ml" style="margin:0;">Monthly Goal</p>
+        <input type="number" id="goal-input" placeholder="Set $goal" style="width:90px;height:24px;font-size:11px;" oninput="saveGoal();renderSalesStats()" min="0" step="10">
+      </div>
+      <div class="goal-bar-wrap"><div class="goal-bar-fill" id="goal-bar" style="width:0%"></div></div>
+      <div class="goal-row"><span id="goal-label">Set a goal above</span><span id="goal-pct"></span></div>
+    </div>
   </div>
   <div class="card">
     <p class="st">Add sale</p>
@@ -304,7 +339,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
         <thead><tr>
           <th style="width:68px;">Date</th><th style="width:130px;">Ref</th><th style="width:90px;">Site</th>
           <th style="width:52px;">Cur</th><th style="width:82px;">Price</th><th style="width:72px;">Cost</th>
-          <th style="width:78px;">Profit</th><th style="width:58px;"></th>
+          <th style="width:78px;">Profit</th><th style="width:58px;">Margin</th><th style="width:58px;"></th>
         </tr></thead>
         <tbody id="sales-body"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody>
       </table>
@@ -340,6 +375,14 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
       <select id="f-cur" style="width:82px;">
         <option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="EGP">E£ EGP</option>
       </select>
+      <select id="f-wallet" style="width:115px;">
+        <option value="Unassigned">Unassigned</option>
+        <option value="Binance">Binance</option>
+        <option value="PayPal">PayPal</option>
+        <option value="Bank">Bank Account</option>
+        <option value="Skrill">Skrill</option>
+        <option value="Cash">Cash</option>
+      </select>
       <input type="text" id="f-note" placeholder="Note (e.g. Paypal deposit)" style="flex:1;min-width:130px;">
       <button class="btn-g" onclick="addFund()">+ Add funds</button>
     </div>
@@ -350,6 +393,14 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
       <input type="number" id="sp-amount" placeholder="Amount" style="width:115px;" min="0" step="0.01">
       <select id="sp-cur" style="width:82px;">
         <option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="EGP">E£ EGP</option>
+      </select>
+      <select id="sp-wallet" style="width:115px;">
+        <option value="Unassigned">Unassigned</option>
+        <option value="Binance">Binance</option>
+        <option value="PayPal">PayPal</option>
+        <option value="Bank">Bank Account</option>
+        <option value="Skrill">Skrill</option>
+        <option value="Cash">Cash</option>
       </select>
       <select id="sp-cat" style="width:160px;">
             <option value="">— Select category —</option>
@@ -435,10 +486,39 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
         <thead><tr>
           <th style="width:65px;">Date</th><th style="width:58px;">Type</th><th style="width:82px;">Category</th>
           <th style="width:88px;">Amount</th><th style="width:50px;">Cur</th><th style="width:76px;">In USD</th>
-          <th style="width:76px;">In E£</th><th style="width:86px;">Balance $</th><th>Note</th><th style="width:58px;"></th>
+          <th style="width:76px;">In E£</th><th style="width:86px;">Balance $</th><th style="width:72px;">Wallet</th><th>Note</th><th style="width:58px;"></th>
         </tr></thead>
-        <tbody id="sp-body"><tr><td colspan="10" class="empty-state">Loading...</td></tr></tbody>
+        <tbody id="sp-body"><tr><td colspan="11" class="empty-state">Loading...</td></tr></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WALLETS ═══ -->
+<div id="pane-wallets" class="pane">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+    <h2 style="font-size:15px;font-weight:700;color:var(--text);">Wallet Dashboard</h2>
+    <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">Existing funds shown as Unassigned · assign via Spending tab</span>
+  </div>
+  <!-- Total balance -->
+  <div class="wallet-grid" style="grid-template-columns:1fr;" id="wallet-total-wrap">
+    <div class="wallet-card wallet-total" style="--wallet-color:#d4a820;">
+      <div class="wallet-name">🏦 <span>Total Balance (All Wallets)</span></div>
+      <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end;">
+        <div><div class="wallet-bal" id="wt-usd">$0.00</div><div class="wallet-sub" id="wt-eur">€0.00</div><div class="wallet-sub" id="wt-egp">E£0</div></div>
+      </div>
+    </div>
+  </div>
+  <!-- Individual wallets -->
+  <div class="wallet-grid" id="wallets-grid">
+    <!-- populated by JS -->
+  </div>
+  <div class="card" style="margin-top:6px;">
+    <p class="st">Low balance threshold</p>
+    <div class="row">
+      <span style="font-size:12px;color:var(--muted);">Warn when wallet balance below</span>
+      <input type="number" id="low-bal-threshold" value="5" min="0" step="1" style="width:80px;" oninput="renderWallets()">
+      <span style="font-size:12px;color:var(--muted);">USD</span>
     </div>
   </div>
 </div>
@@ -651,9 +731,9 @@ function rowsToSales(rows) {
 }
 
 function spendingToRows(arr) {
-  const rows = [['date','type','cat','amtOrig','cur','amtUSD','note']];
+  const rows = [['date','type','cat','amtOrig','cur','amtUSD','note','wallet']];
   arr.forEach(t => rows.push([
-    t.date, t.type, t.cat||'', t.amtOrig, t.cur, t.amtUSD, t.note||''
+    t.date, t.type, t.cat||'', t.amtOrig, t.cur, t.amtUSD, t.note||'', t.wallet||'Unassigned'
   ]));
   return rows;
 }
@@ -667,7 +747,8 @@ function rowsToSpending(rows) {
     amtOrig: parseFloat(r[3])||0,
     cur: r[4]||'USD',
     amtUSD: parseFloat(r[5])||0,
-    note: r[6]||''
+    note: r[6]||'',
+    wallet: r[7]||'Unassigned'
   }));
 }
 
@@ -793,10 +874,11 @@ async function pushArchive() {
 
 // ─── TABS & MODALS ────────────────────────────────
 function switchTab(t) {
-  const names = ['sales','spending','archive'];
+  const names = ['sales','spending','wallets','archive'];
   document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', names[i]===t));
   names.forEach(n => document.getElementById('pane-'+n).classList.toggle('active', n===t));
   if (t==='archive') renderArchive();
+  if (t==='wallets') renderWallets();
 }
 function openModal(id) { document.getElementById(id).classList.add('open'); renderModalArchive(id); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -899,12 +981,35 @@ function renderSalesStats() {
   const profit = list.reduce((s,t)=>s+t.profit,0);
   const cost = list.reduce((s,t)=>s+(t.costUSD||0),0);
   const days = daysElapsedInMonth(mk);
+  const margin = rev > 0 ? (profit / rev * 100) : 0;
+
   document.getElementById('s-rev').textContent = fmtUSD(rev);
+  document.getElementById('s-rev-egp').textContent = '≈ ' + fmtEGP(rev * EGP());
   document.getElementById('s-profit').textContent = fmtUSD(profit);
+  document.getElementById('s-profit-egp').textContent = '≈ ' + fmtEGP(profit * EGP());
   document.getElementById('s-cost-total').textContent = fmtUSD(cost);
+  document.getElementById('s-cost-egp').textContent = '≈ ' + fmtEGP(cost * EGP());
   document.getElementById('s-count').textContent = list.length;
+  document.getElementById('s-margin').textContent = 'Margin: ' + margin.toFixed(1) + '%';
   document.getElementById('s-per-day').textContent = fmtUSD(days>0 ? profit/days : 0);
   document.getElementById('s-per-day-sub').textContent = 'over '+days+' day'+(days!==1?'s':'');
+
+  // Monthly goal
+  const goalRaw = parseFloat(document.getElementById('goal-input').value);
+  const bar = document.getElementById('goal-bar');
+  const goalLabel = document.getElementById('goal-label');
+  const goalPct = document.getElementById('goal-pct');
+  if (goalRaw > 0) {
+    const pct = Math.min(100, (profit / goalRaw) * 100);
+    bar.style.width = pct + '%';
+    bar.className = 'goal-bar-fill' + (pct >= 100 ? '' : pct >= 60 ? ' warn' : ' danger');
+    goalLabel.textContent = fmtUSD(profit) + ' of ' + fmtUSD(goalRaw);
+    goalPct.textContent = pct.toFixed(0) + '%';
+  } else {
+    bar.style.width = '0%';
+    goalLabel.textContent = 'Set a goal above';
+    goalPct.textContent = '';
+  }
 }
 
 function renderSales() {
@@ -934,6 +1039,8 @@ function renderSales() {
     const idx = sales.indexOf(t);
     const pc = t.profit >= 0 ? 'var(--green)' : 'var(--red)';
     const refDisplay = query ? highlight(t.ref||'—', query) : (t.ref||'—');
+    const marg = t.priceUSD > 0 ? (t.profit / t.priceUSD * 100).toFixed(1) + '%' : '—';
+    const mc = t.priceUSD > 0 ? (t.profit/t.priceUSD >= 0.3 ? 'var(--green)' : t.profit/t.priceUSD >= 0.1 ? 'var(--amber)' : 'var(--red)') : 'var(--muted)';
     return `<tr>
       <td style="color:var(--muted);">${t.date}</td>
       <td>${refDisplay}</td>
@@ -942,6 +1049,7 @@ function renderSales() {
       <td>${fmtOrig(t.priceOrig, t.cur)}</td>
       <td style="color:var(--muted);">${t.costUSD!==null&&t.costUSD!==undefined ? fmtUSD(t.costUSD) : '—'}</td>
       <td style="font-weight:600;color:${pc};">${fmtUSD(t.profit)}</td>
+      <td style="font-size:11px;color:${mc};">${marg}</td>
       <td style="overflow:visible;"><div class="action-cell"><button class="btn-edit" title="Edit" onclick="openEditSale(${idx})">✎</button><button class="btn-del" title="Delete" onclick="delSale(${idx})">x</button></div></td>
     </tr>`;
   }).join('');
@@ -1012,7 +1120,7 @@ function renderSpending() {
   document.getElementById('sp-results-count').textContent = query || fType!=='All' || fCat!=='All' || fCur!=='All' ? list.length+' result'+(list.length!==1?'s':'') : '';
 
   if (!list.length) {
-    body.innerHTML = '<tr><td colspan="10" class="empty-state">'+(query?'No results for "'+query+'"':'No transactions for this month')+'</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" class="empty-state">'+(query?'No results for "'+query+'"':'No transactions for this month')+'</td></tr>';
     return;
   }
 
@@ -1040,6 +1148,7 @@ function renderSpending() {
     const idx = spending.indexOf(t);
     const noteDisplay = query ? highlight(t.note||'', query) : (t.note||'');
     const catDisplay = query ? highlight(t.type==='fund'?'—':(t.cat||''), query) : (t.type==='fund'?'—':(t.cat||''));
+    const walletInfo = WALLETS.find(w => w.id === (t.wallet||'Unassigned')) || WALLETS[5];
     return `<tr>
       <td style="color:var(--muted);">${t.date}</td>
       <td>${tt}</td>
@@ -1049,6 +1158,7 @@ function renderSpending() {
       <td style="color:var(--muted);">${sg}${fmtUSD(t.amtUSD)}</td>
       <td style="color:var(--muted);">${sg}${fmtEGP(t.amtUSD*EGP())}</td>
       <td style="font-weight:600;color:${bc};">${fmtUSD(run)}</td>
+      <td style="font-size:11px;color:var(--muted);">${walletInfo.icon} ${walletInfo.label}</td>
       <td style="color:var(--muted);">${noteDisplay}</td>
       <td style="overflow:visible;"><div class="action-cell"><button class="btn-edit" title="Edit" onclick="openEditSpend(${idx})">✎</button><button class="btn-del" title="Delete" onclick="delSpend(${idx})">x</button></div></td>
     </tr>`;
@@ -1060,8 +1170,9 @@ function addFund() {
   const amt = parseFloat(document.getElementById('f-amount').value);
   const cur = document.getElementById('f-cur').value;
   const note = document.getElementById('f-note').value.trim();
+  const wallet = document.getElementById('f-wallet').value;
   if (!amt || amt<=0) return;
-  spending.push({type:'fund', amtOrig:amt, amtUSD:toUSD(amt,cur), cur, cat:'', note, date:today()});
+  spending.push({type:'fund', amtOrig:amt, amtUSD:toUSD(amt,cur), cur, cat:'', note, date:today(), wallet});
   document.getElementById('f-amount').value='';
   document.getElementById('f-note').value='';
   pushData();
@@ -1072,6 +1183,7 @@ function addSpend() {
   const cur = document.getElementById('sp-cur').value;
   const note = document.getElementById('sp-note').value.trim();
   const cat = document.getElementById('sp-cat').value;
+  const wallet = document.getElementById('sp-wallet').value;
   const warn = document.getElementById('sp-warn');
   if (!amt || amt<=0) return;
   const amtUSD = toUSD(amt, cur);
@@ -1079,7 +1191,7 @@ function addSpend() {
     warn.style.display='block'; setTimeout(()=>warn.style.display='none',2500); return;
   }
   warn.style.display='none';
-  spending.push({type:'spend', amtOrig:amt, amtUSD, cur, cat, note, date:today()});
+  spending.push({type:'spend', amtOrig:amt, amtUSD, cur, cat, note, date:today(), wallet});
   document.getElementById('sp-amount').value='';
   document.getElementById('sp-note').value='';
   pushData();
@@ -1200,8 +1312,8 @@ function exportExcel() {
   const sr = [['Date','Ref','Site','Currency','Sell Price','Cost $','Profit $']];
   sales.forEach(t => sr.push([t.date,t.ref||'',t.site,t.cur,t.priceOrig,t.costUSD??'',t.profit]));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sr),'Sales');
-  const spr = [['Date','Type','Category','Amount','Currency','Amount USD','Note']];
-  spending.forEach(t => spr.push([t.date,t.type,t.cat||'',t.amtOrig,t.cur,t.amtUSD,t.note||'']));
+  const spr = [['Date','Type','Category','Amount','Currency','Amount USD','Note','Wallet']];
+  spending.forEach(t => spr.push([t.date,t.type,t.cat||'',t.amtOrig,t.cur,t.amtUSD,t.note||'',t.wallet||'Unassigned']));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(spr),'Spending');
   salesArchive.forEach(a=>{
     const r=[['Date','Ref','Site','Currency','Sell Price','Cost $','Profit $']];
@@ -1237,7 +1349,8 @@ function importExcel(event) {
       const rows = XLSX.utils.sheet_to_json(sp,{header:1});
       spending = rows.slice(1).filter(r=>r[0]).map(r=>({
         date:sanitizeDate(r[0]),type:r[1]||'spend',cat:r[2]||'',
-        amtOrig:parseFloat(r[3])||0,cur:r[4]||'USD',amtUSD:parseFloat(r[5])||0,note:r[6]||''
+        amtOrig:parseFloat(r[3])||0,cur:r[4]||'USD',amtUSD:parseFloat(r[5])||0,note:r[6]||'',
+        wallet:r[7]||'Unassigned'
       }));
     }
     await pushData();
@@ -1307,6 +1420,7 @@ function openEditSpend(i) {
   document.getElementById('esp-amount').value = t.amtOrig || '';
   document.getElementById('esp-cur').value = t.cur || 'USD';
   document.getElementById('esp-note').value = t.note || '';
+  document.getElementById('esp-wallet').value = t.wallet || 'Unassigned';
   document.getElementById('esp-warn').style.display = 'none';
   document.getElementById('modal-edit-spend').dataset.idx = i;
   openModal('modal-edit-spend');
@@ -1328,7 +1442,8 @@ function saveEditSpend() {
     amtOrig: amt,
     amtUSD: toUSD(amt, cur),
     cur,
-    note: document.getElementById('esp-note').value.trim()
+    note: document.getElementById('esp-note').value.trim(),
+    wallet: document.getElementById('esp-wallet').value
   };
   closeModal('modal-edit-spend');
   pushData();
@@ -1342,12 +1457,72 @@ function deleteFromEditSpend() {
   pushData();
 }
 
+// ─── GOAL PERSISTENCE ────────────────────────────
+function saveGoal() {
+  const v = document.getElementById('goal-input').value;
+  try { localStorage.setItem('mh_goal', v); } catch(e) {}
+}
+function loadGoal() {
+  try {
+    const v = localStorage.getItem('mh_goal');
+    if (v) document.getElementById('goal-input').value = v;
+  } catch(e) {}
+}
+
+// ─── WALLET SYSTEM ───────────────────────────────
+const WALLETS = [
+  { id: 'Binance',    label: 'Binance',      icon: '🟡', color: '#f0b90b' },
+  { id: 'PayPal',     label: 'PayPal',       icon: '🔵', color: '#003087' },
+  { id: 'Bank',       label: 'Bank Account', icon: '🏛️', color: '#60a5fa' },
+  { id: 'Skrill',     label: 'Skrill',       icon: '🟣', color: '#8b1fa8' },
+  { id: 'Cash',       label: 'Cash',         icon: '💵', color: '#4ade80' },
+  { id: 'Unassigned', label: 'Unassigned',   icon: '📦', color: '#7a7e89' },
+];
+
+function getWalletBalance(walletId) {
+  return spending.reduce((bal, t) => {
+    const w = t.wallet || 'Unassigned';
+    if (w !== walletId) return bal;
+    return t.type === 'fund' ? bal + t.amtUSD : bal - t.amtUSD;
+  }, 0);
+}
+
+function renderWallets() {
+  const threshold = parseFloat(document.getElementById('low-bal-threshold').value) || 5;
+  const grid = document.getElementById('wallets-grid');
+
+  let totalUSD = 0;
+
+  grid.innerHTML = WALLETS.map(w => {
+    const bal = getWalletBalance(w.id);
+    totalUSD += bal;
+    const balEUR = bal / EUR();
+    const balEGP = bal * EGP();
+    const isLow = bal < threshold && bal >= 0;
+    const isNeg = bal < 0;
+
+    return `<div class="wallet-card" style="--wallet-color:${w.color};">
+      <div class="wallet-name">${w.icon} <span>${w.label}</span></div>
+      <div class="wallet-bal" style="color:${isNeg ? 'var(--red)' : bal === 0 ? 'var(--muted)' : 'var(--text)'};">${fmtUSD(bal)}</div>
+      <div class="wallet-sub">€${Math.abs(balEUR).toFixed(2)} · ${fmtEGP(balEGP)}</div>
+      ${isLow && !isNeg ? '<div class="wallet-warn">⚠ Low balance</div>' : ''}
+      ${isNeg ? '<div class="wallet-warn">⛔ Negative</div>' : ''}
+    </div>`;
+  }).join('');
+
+  // Total
+  document.getElementById('wt-usd').textContent = fmtUSD(totalUSD);
+  document.getElementById('wt-eur').textContent = '€' + Math.abs(totalUSD / EUR()).toFixed(2);
+  document.getElementById('wt-egp').textContent = fmtEGP(totalUSD * EGP());
+}
+
 // ─── RERENDER ─────────────────────────────────────
 function rerender() {
   populateMonthSelectors();
   renderSalesStats(); renderSales();
   renderSpendStats(); renderSpending();
   renderArchive();
+  renderWallets();
 }
 
 // ─── AUTO SYNC ────────────────────────────────────
@@ -1384,6 +1559,7 @@ setInterval(() => {
 // ─── INIT ─────────────────────────────────────────
 (async function init() {
   loadLocal();
+  loadGoal();
   document.getElementById('loading-text').textContent = 'Loading cached data...';
   rerender();
   document.getElementById('loading-text').textContent = 'Syncing with Google Sheets...';
@@ -1511,6 +1687,17 @@ setInterval(() => {
       <div style="display:flex;flex-direction:column;gap:4px;">
         <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Note</label>
         <input type="text" id="esp-note" placeholder="Note / description" style="width:100%;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Wallet</label>
+        <select id="esp-wallet" style="width:100%;">
+          <option value="Unassigned">Unassigned</option>
+          <option value="Binance">Binance</option>
+          <option value="PayPal">PayPal</option>
+          <option value="Bank">Bank Account</option>
+          <option value="Skrill">Skrill</option>
+          <option value="Cash">Cash</option>
+        </select>
       </div>
       <div style="display:flex;gap:8px;margin-top:4px;">
         <button class="btn-g" style="flex:2;" onclick="saveEditSpend()">Save changes</button>
