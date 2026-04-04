@@ -656,6 +656,14 @@ function toUSD(amt, cur) {
   if (cur === 'EGP') return amt / EGP();
   return amt;
 }
+// Returns the correct E£ display for a transaction:
+// - EGP entries: use the original amount directly (no drift)
+// - USD/EUR entries: convert amtUSD using the snapshotted rate (or current if old record)
+function txEGP(t) {
+  if (t.cur === 'EGP') return t.amtOrig;
+  const rate = t.egpRate || EGP();
+  return t.amtUSD * rate;
+}
 function fmtUSD(v) { return '$' + Math.abs(v).toFixed(2); }
 function fmtEGP(v) { return 'E£' + Math.abs(Math.round(v)).toLocaleString(); }
 function fmtOrig(amt, cur) {
@@ -731,9 +739,9 @@ function rowsToSales(rows) {
 }
 
 function spendingToRows(arr) {
-  const rows = [['date','type','cat','amtOrig','cur','amtUSD','note','wallet']];
+  const rows = [['date','type','cat','amtOrig','cur','amtUSD','note','wallet','egpRate']];
   arr.forEach(t => rows.push([
-    t.date, t.type, t.cat||'', t.amtOrig, t.cur, t.amtUSD, t.note||'', t.wallet||'Unassigned'
+    t.date, t.type, t.cat||'', t.amtOrig, t.cur, t.amtUSD, t.note||'', t.wallet||'Unassigned', t.egpRate||''
   ]));
   return rows;
 }
@@ -748,7 +756,8 @@ function rowsToSpending(rows) {
     cur: r[4]||'USD',
     amtUSD: parseFloat(r[5])||0,
     note: r[6]||'',
-    wallet: r[7]||'Unassigned'
+    wallet: r[7]||'Unassigned',
+    egpRate: r[8] ? parseFloat(r[8]) : null
   }));
 }
 
@@ -1080,6 +1089,9 @@ function renderSpendStats() {
   const balEGP = bal * EGP();
   const funded = getTotalFundedUSD(list);
   const spent = getTotalSpentUSD(list);
+  // Sum E£ using each transaction's original amount (no rate drift)
+  const fundedEGP = list.filter(t=>t.type==='fund').reduce((s,t)=>s+txEGP(t),0);
+  const spentEGP  = list.filter(t=>t.type==='spend').reduce((s,t)=>s+txEGP(t),0);
   const uE = document.getElementById('b-usd');
   const eE = document.getElementById('b-egp');
   uE.textContent = fmtUSD(bal); uE.className = 'mv '+(bal<0?'mv-red':'mv-green');
@@ -1087,9 +1099,9 @@ function renderSpendStats() {
   document.getElementById('b-egp-sub').textContent = '≈ '+fmtEGP(balEGP);
   document.getElementById('b-usd-sub').textContent = '≈ '+fmtUSD(bal);
   document.getElementById('sp-funded').textContent = fmtUSD(funded);
-  document.getElementById('sp-funded-egp').textContent = '≈ '+fmtEGP(funded*EGP());
+  document.getElementById('sp-funded-egp').textContent = '≈ '+fmtEGP(fundedEGP);
   document.getElementById('sp-spent').textContent = fmtUSD(spent);
-  document.getElementById('sp-spent-egp').textContent = '≈ '+fmtEGP(spent*EGP());
+  document.getElementById('sp-spent-egp').textContent = '≈ '+fmtEGP(spentEGP);
   document.getElementById('sp-count').textContent = list.length;
 }
 
@@ -1156,7 +1168,7 @@ function renderSpending() {
       <td style="font-weight:600;color:${ac};">${sg}${fmtOrig(t.amtOrig,t.cur)}</td>
       <td>${cc}</td>
       <td style="color:var(--muted);">${sg}${fmtUSD(t.amtUSD)}</td>
-      <td style="color:var(--muted);">${sg}${fmtEGP(t.amtUSD*EGP())}</td>
+      <td style="color:var(--muted);">${sg}${fmtEGP(txEGP(t))}</td>
       <td style="font-weight:600;color:${bc};">${fmtUSD(run)}</td>
       <td style="font-size:11px;color:var(--muted);">${walletInfo.icon} ${walletInfo.label}</td>
       <td style="color:var(--muted);">${noteDisplay}</td>
@@ -1172,7 +1184,8 @@ function addFund() {
   const note = document.getElementById('f-note').value.trim();
   const wallet = document.getElementById('f-wallet').value;
   if (!amt || amt<=0) return;
-  spending.push({type:'fund', amtOrig:amt, amtUSD:toUSD(amt,cur), cur, cat:'', note, date:today(), wallet});
+  // Snapshot the rate at entry time so E£ display never drifts
+  spending.push({type:'fund', amtOrig:amt, amtUSD:toUSD(amt,cur), cur, cat:'', note, date:today(), wallet, egpRate:EGP()});
   document.getElementById('f-amount').value='';
   document.getElementById('f-note').value='';
   pushData();
@@ -1191,7 +1204,7 @@ function addSpend() {
     warn.style.display='block'; setTimeout(()=>warn.style.display='none',2500); return;
   }
   warn.style.display='none';
-  spending.push({type:'spend', amtOrig:amt, amtUSD, cur, cat, note, date:today(), wallet});
+  spending.push({type:'spend', amtOrig:amt, amtUSD, cur, cat, note, date:today(), wallet, egpRate:EGP()});
   document.getElementById('sp-amount').value='';
   document.getElementById('sp-note').value='';
   pushData();
@@ -1299,7 +1312,7 @@ function renderModalArchive(id) {
           <td>${t.type==='fund'?'—':t.cat}</td>
           <td>${fmtOrig(t.amtOrig,t.cur)}</td>
           <td>${fmtUSD(t.amtUSD)}</td>
-          <td>${fmtEGP(t.amtUSD*EGP())}</td>
+          <td>${fmtEGP(txEGP(t))}</td>
           <td style="color:var(--muted);">${t.note||''}</td>
         </tr>`).join('')}</tbody></table>
       </div>`).join('<hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">');
@@ -1435,6 +1448,7 @@ function saveEditSpend() {
   }
   warn.style.display = 'none';
   const cur = document.getElementById('esp-cur').value;
+  const oldEgpRate = spending[i].egpRate || null;
   spending[i] = {
     date: sanitizeDate(document.getElementById('esp-date').value) || today(),
     type: document.getElementById('esp-type').value,
@@ -1443,7 +1457,9 @@ function saveEditSpend() {
     amtUSD: toUSD(amt, cur),
     cur,
     note: document.getElementById('esp-note').value.trim(),
-    wallet: document.getElementById('esp-wallet').value
+    wallet: document.getElementById('esp-wallet').value,
+    // Keep original rate if currency unchanged, re-snapshot if currency changed to EGP
+    egpRate: cur === 'EGP' ? (oldEgpRate || EGP()) : oldEgpRate
   };
   closeModal('modal-edit-spend');
   pushData();
