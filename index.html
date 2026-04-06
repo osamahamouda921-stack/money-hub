@@ -240,7 +240,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
       <button class="btn-blue btn-sm" onclick="exportExcel()">Export Excel</button>
       <button class="btn-amber btn-sm" onclick="document.getElementById('import-input').click()">Import Excel</button>
       <input type="file" id="import-input" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(event)">
-      <button class="btn-sm" onclick="syncAll(false)" style="font-size:11px;">↻ Sync</button>
+      <button class="btn-sm" onclick="manualSync()" style="font-size:11px;">↻ Sync</button>
     </div>
   </div>
 </div>
@@ -262,7 +262,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
     <div style="display:flex;align-items:center;gap:8px;">
       <span style="font-size:11px;color:var(--muted);">Viewing:</span>
-      <select id="s-month-view" onchange="renderSalesStats();renderSales();renderSalesDayChart()" style="height:30px;font-size:12px;width:130px;"></select>
+      <select id="s-month-view" onchange="renderSalesStats();renderSales()" style="height:30px;font-size:12px;width:130px;"></select>
     </div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;">
       <button class="btn-amber btn-sm" onclick="closeMonth('sales')">Close Month &amp; Archive</button>
@@ -274,9 +274,9 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     <div class="metric"><p class="ml">Profit</p><div class="dual-val"><span class="dv-main mv-green" id="s-profit">$0.00</span><span class="dv-sub" id="s-profit-egp">≈ E£0</span></div></div>
     <div class="metric"><p class="ml">Cost</p><div class="dual-val"><span class="dv-main mv-red" id="s-cost-total">$0.00</span><span class="dv-sub" id="s-cost-egp">≈ E£0</span></div></div>
     <div class="metric"><p class="ml">Sales</p><p class="mv" id="s-count">0</p><p class="mv2" id="s-margin">Margin: —</p></div>
-    <div class="metric"><p class="ml">Profit / Day</p><div class="dual-val"><span class="dv-main mv-amber" id="s-per-day">$0.00</span><span class="dv-sub" id="s-per-day-egp">≈ E£0</span><span class="dv-sub" id="s-per-day-sub"></span></div></div>
+    <div class="metric"><p class="ml">Profit / Day</p><div class="dual-val"><span class="dv-main mv-amber" id="s-per-day">$0.00</span><span class="dv-sub" id="s-per-day-sub"></span></div></div>
   </div>
-  <div class="metrics-grid g2" style="margin-bottom:10px;">
+  <div class="metrics-grid g2" style="margin-bottom:4px;">
     <div class="metric">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
         <p class="ml" style="margin:0;">Monthly Goal</p>
@@ -284,11 +284,6 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
       </div>
       <div class="goal-bar-wrap"><div class="goal-bar-fill" id="goal-bar" style="width:0%"></div></div>
       <div class="goal-row"><span id="goal-label">Set a goal above</span><span id="goal-pct"></span></div>
-    </div>
-    <div class="metric" style="padding:11px 14px;">
-      <p class="ml" style="margin-bottom:5px;">Sales / Day — This Month</p>
-      <canvas id="sales-day-chart" style="width:100%;height:52px;display:block;"></canvas>
-      <p style="font-size:10px;color:var(--hint);font-family:'DM Mono',monospace;margin-top:3px;" id="chart-empty-msg"></p>
     </div>
   </div>
   <div class="card">
@@ -580,6 +575,7 @@ let spending = [];
 let salesArchive = [];
 let spendArchive = [];
 let isSyncing = false;
+let pendingPush = false; // true when local has unsaved changes not yet in Sheets
 let activeGroupFilter = "all";
 
 // ─── DATE UTILITIES ───────────────────────────────
@@ -797,6 +793,7 @@ function saveLocal() {
   try { localStorage.setItem('mh_spending', JSON.stringify(spending)); } catch(e) {}
   try { localStorage.setItem('mh_salesarch', JSON.stringify(salesArchive)); } catch(e) {}
   try { localStorage.setItem('mh_spendarch', JSON.stringify(spendArchive)); } catch(e) {}
+  try { localStorage.setItem('mh_pending', pendingPush ? '1' : '0'); } catch(e) {}
 }
 
 function loadLocal() {
@@ -810,6 +807,8 @@ function loadLocal() {
   // Sanitize all dates from local cache too
   sales = sales.map(s => ({...s, date: sanitizeDate(s.date)}));
   spending = spending.map(s => ({...s, date: sanitizeDate(s.date)}));
+  // Restore pending push flag — if app closed before push succeeded
+  try { pendingPush = localStorage.getItem('mh_pending') === '1'; } catch(e) {}
 }
 
 // ─── SYNC ─────────────────────────────────────────
@@ -823,6 +822,7 @@ async function syncAll(push) {
         sheetWrite('sales', salesToRows(sales)),
         sheetWrite('spending', spendingToRows(spending)),
       ]);
+      pendingPush = false; // local is now in sync with Sheets
     } else {
       const [sRows, spRows, archRows] = await Promise.all([
         sheetRead('sales'),
@@ -849,6 +849,10 @@ async function syncAll(push) {
 }
 
 async function pushData() {
+  pendingPush = true; // mark dirty before attempting
+  saveLocal();        // always persist locally first — data is never lost
+  populateMonthSelectors();
+  rerender();
   setSyncStatus('syncing', 'Saving...');
   isSyncing = true;
   try {
@@ -856,15 +860,14 @@ async function pushData() {
       sheetWrite('sales', salesToRows(sales)),
       sheetWrite('spending', spendingToRows(spending)),
     ]);
+    pendingPush = false;
     saveLocal();
     setSyncStatus('ok', 'Saved ✓');
   } catch(e) {
-    saveLocal(); // at least save locally
+    // Keep pendingPush = true so autoSync retries later
     setSyncStatus('err', 'Save failed — kept locally');
   }
   isSyncing = false;
-  populateMonthSelectors();
-  rerender();
 }
 
 async function pushArchive() {
@@ -1005,9 +1008,7 @@ function renderSalesStats() {
   document.getElementById('s-cost-egp').textContent = '≈ ' + fmtEGP(cost * EGP());
   document.getElementById('s-count').textContent = list.length;
   document.getElementById('s-margin').textContent = 'Margin: ' + margin.toFixed(1) + '%';
-  const ppd = days > 0 ? profit / days : 0;
-  document.getElementById('s-per-day').textContent = fmtUSD(ppd);
-  document.getElementById('s-per-day-egp').textContent = '≈ ' + fmtEGP(ppd * EGP());
+  document.getElementById('s-per-day').textContent = fmtUSD(days>0 ? profit/days : 0);
   document.getElementById('s-per-day-sub').textContent = 'over '+days+' day'+(days!==1?'s':'');
 
   // Monthly goal
@@ -1539,61 +1540,6 @@ function renderWallets() {
   document.getElementById('wt-egp').textContent = fmtEGP(totalUSD * EGP());
 }
 
-// ─── SALES/DAY CHART ─────────────────────────────
-function renderSalesDayChart() {
-  const canvas = document.getElementById('sales-day-chart');
-  if (!canvas) return;
-  const mk = getVM('s-month-view');
-  const list = filterByMonth(sales, mk);
-  const emptyMsg = document.getElementById('chart-empty-msg');
-  if (!list.length) {
-    emptyMsg.textContent = 'No sales yet this month';
-    const ctx = canvas.getContext('2d');
-    canvas.width = canvas.parentElement.clientWidth || 300;
-    canvas.height = 52;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    return;
-  }
-  emptyMsg.textContent = '';
-  const [yr, mo] = mk.split('-').map(Number);
-  const totalDays = new Date(yr, mo, 0).getDate();
-  const byDay = {};
-  list.forEach(t => { const d = parseInt(t.date.split('/')[0]); byDay[d] = (byDay[d]||0) + t.profit; });
-  const now = new Date();
-  const isCurrent = mk === (now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
-  const maxDay = isCurrent ? now.getDate() : totalDays;
-  const days = Array.from({length: maxDay}, (_,i) => i+1);
-  const values = days.map(d => byDay[d]||0);
-  const maxVal = Math.max(...values, 0.01);
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth - 28 || 300;
-  const H = 52;
-  canvas.width = W * dpr; canvas.height = H * dpr;
-  canvas.style.width = W+'px'; canvas.style.height = H+'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, W, H);
-  const padL=2, padR=2, padT=4, padB=14;
-  const chartW=W-padL-padR, chartH=H-padT-padB;
-  const gap=chartW/days.length, barW=Math.max(2,gap-1.5);
-  days.forEach((d,i) => {
-    const v=values[i], bh=v>0?Math.max(3,(v/maxVal)*chartH):(v<0?3:0);
-    const x=padL+i*gap+(gap-barW)/2, barY=padT+chartH-bh;
-    const isToday=isCurrent&&d===now.getDate();
-    if (v===0){ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fillRect(x,padT+chartH-2,barW,2);return;}
-    if (v>0){const g=ctx.createLinearGradient(0,barY,0,barY+bh);g.addColorStop(0,isToday?'rgba(251,191,36,0.9)':'rgba(74,222,128,0.85)');g.addColorStop(1,isToday?'rgba(251,191,36,0.25)':'rgba(74,222,128,0.2)');ctx.fillStyle=g;}
-    else{ctx.fillStyle='rgba(248,113,113,0.7)';}
-    const r=Math.min(2,barW/2);
-    ctx.beginPath();ctx.moveTo(x+r,barY);ctx.lineTo(x+barW-r,barY);ctx.quadraticCurveTo(x+barW,barY,x+barW,barY+r);ctx.lineTo(x+barW,barY+bh);ctx.lineTo(x,barY+bh);ctx.lineTo(x,barY+r);ctx.quadraticCurveTo(x,barY,x+r,barY);ctx.fill();
-  });
-  ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(padL,padT+chartH);ctx.lineTo(W-padR,padT+chartH);ctx.stroke();
-  ctx.fillStyle='rgba(122,126,137,0.75)';ctx.font='8px DM Mono,monospace';ctx.textAlign='center';
-  const every=days.length<=10?1:days.length<=20?2:5;
-  days.forEach((d,i)=>{if(d===1||d%every===0||d===maxDay)ctx.fillText(d,padL+i*gap+gap/2,H-2);});
-}
-
-window.addEventListener('resize', () => renderSalesDayChart());
-
 // ─── RERENDER ─────────────────────────────────────
 function rerender() {
   populateMonthSelectors();
@@ -1601,38 +1547,47 @@ function rerender() {
   renderSpendStats(); renderSpending();
   renderArchive();
   renderWallets();
-  renderSalesDayChart();
 }
 
 // ─── AUTO SYNC ────────────────────────────────────
 let lastSyncTime = 0;
-const SYNC_COOLDOWN = 30000; // don't sync more than once per 30s
+const SYNC_COOLDOWN = 30000; // don't background-sync more than once per 30s
 
+// Safe auto-sync: ALWAYS push local changes first, then pull from Sheets.
+// This means your entries can never be overwritten by a remote pull.
 async function autoSync() {
   const now = Date.now();
   if (isSyncing) return;
   if (now - lastSyncTime < SYNC_COOLDOWN) return;
   lastSyncTime = now;
+
+  // Step 1: if we have unsaved local changes, push them first
+  if (pendingPush) {
+    setSyncStatus('syncing', 'Saving local changes...');
+    await syncAll(true);
+  }
+
+  // Step 2: pull latest from Sheets (safe — local is already up there)
   await syncAll(false);
 }
 
-// Sync when tab becomes visible again (switching back from another tab)
+// Manual ↻ Sync button — same safe push-then-pull
+async function manualSync() {
+  lastSyncTime = 0; // bypass cooldown
+  await autoSync();
+}
+
+// Sync when tab becomes visible again
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    autoSync();
-  }
+  if (document.visibilityState === 'visible') autoSync();
 });
 
-// Sync when window gets focus (clicking back on browser window)
-window.addEventListener('focus', () => {
-  autoSync();
-});
+// Sync when window gets focus
+window.addEventListener('focus', () => autoSync());
 
-// Background sync every 2 minutes while tab is open
+// Background sync every 2 minutes
 setInterval(() => {
-  if (document.visibilityState === 'visible') {
-    autoSync();
-  }
+  if (document.visibilityState === 'visible') autoSync();
 }, 120000);
 
 // ─── INIT ─────────────────────────────────────────
@@ -1642,6 +1597,8 @@ setInterval(() => {
   document.getElementById('loading-text').textContent = 'Loading cached data...';
   rerender();
   document.getElementById('loading-text').textContent = 'Syncing with Google Sheets...';
+  // On first load: push any pending local data first, then pull
+  if (pendingPush) await syncAll(true);
   await syncAll(false);
   lastSyncTime = Date.now();
   document.getElementById('loading').style.display = 'none';
