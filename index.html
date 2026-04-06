@@ -579,7 +579,6 @@ let sales = [];
 let spending = [];
 let salesArchive = [];
 let spendArchive = [];
-let isSyncing = false;
 let activeGroupFilter = "all";
 
 // ─── DATE UTILITIES ───────────────────────────────
@@ -813,44 +812,20 @@ function loadLocal() {
 }
 
 // ─── SYNC ─────────────────────────────────────────
-async function syncAll(push) {
-  if (isSyncing) return;
-  isSyncing = true;
-  setSyncStatus('syncing', push ? 'Saving...' : 'Syncing...');
-  try {
-    if (push) {
-      await Promise.all([
-        sheetWrite('sales', salesToRows(sales)),
-        sheetWrite('spending', spendingToRows(spending)),
-      ]);
-    } else {
-      const [sRows, spRows, archRows] = await Promise.all([
-        sheetRead('sales'),
-        sheetRead('spending'),
-        sheetRead('archive'),
-      ]);
-      if (sRows && sRows.length) sales = rowsToSales(sRows);
-      if (spRows && spRows.length) spending = rowsToSpending(spRows);
-      if (archRows && archRows.length) {
-        const all = rowsToArchive(archRows);
-        salesArchive = all.filter(a => a.type === 'sales' || (a.stats && a.stats.rev !== undefined));
-        spendArchive = all.filter(a => a.type === 'spend' || (a.stats && a.stats.funded !== undefined));
-      }
-    }
-    saveLocal();
-    setSyncStatus('ok', push ? 'Saved ✓' : 'Synced ✓');
-  } catch(e) {
-    console.error('Sync error', e);
-    setSyncStatus('err', 'Sync failed');
-  }
-  isSyncing = false;
-  populateMonthSelectors();
-  rerender();
-}
+// Write queue — only ONE write ever in-flight at a time.
+// If a write is pending while one is in-flight, it waits and
+// collapses all queued requests into a single write.
+let isSyncing = false;
+let writeQueued = false;
 
-async function pushData() {
-  setSyncStatus('syncing', 'Saving...');
+async function flushWrite() {
+  if (isSyncing) {
+    writeQueued = true; // another write came in — will retry after current one
+    return;
+  }
   isSyncing = true;
+  writeQueued = false;
+  setSyncStatus('syncing', 'Saving...');
   try {
     await Promise.all([
       sheetWrite('sales', salesToRows(sales)),
@@ -859,17 +834,54 @@ async function pushData() {
     saveLocal();
     setSyncStatus('ok', 'Saved ✓');
   } catch(e) {
-    saveLocal(); // at least save locally
+    saveLocal();
     setSyncStatus('err', 'Save failed — kept locally');
+  }
+  isSyncing = false;
+  // If another write was requested while we were busy, flush it now
+  if (writeQueued) flushWrite();
+}
+
+async function pullFromSheets() {
+  if (isSyncing) return; // don't pull while a write is in-flight
+  isSyncing = true;
+  setSyncStatus('syncing', 'Syncing...');
+  try {
+    const [sRows, spRows, archRows] = await Promise.all([
+      sheetRead('sales'),
+      sheetRead('spending'),
+      sheetRead('archive'),
+    ]);
+    if (sRows && sRows.length) sales = rowsToSales(sRows);
+    if (spRows && spRows.length) spending = rowsToSpending(spRows);
+    if (archRows && archRows.length) {
+      const all = rowsToArchive(archRows);
+      salesArchive = all.filter(a => a.type === 'sales' || (a.stats && a.stats.rev !== undefined));
+      spendArchive = all.filter(a => a.type === 'spend' || (a.stats && a.stats.funded !== undefined));
+    }
+    saveLocal();
+    setSyncStatus('ok', 'Synced ✓');
+  } catch(e) {
+    console.error('Pull error', e);
+    setSyncStatus('err', 'Sync failed');
   }
   isSyncing = false;
   populateMonthSelectors();
   rerender();
 }
 
+// pushData: called every time user adds/edits/deletes a record
+async function pushData() {
+  saveLocal();           // save to localStorage immediately — never lose data
+  populateMonthSelectors();
+  rerender();
+  await flushWrite();   // queued write — safe if another is already in-flight
+}
+
 async function pushArchive() {
-  setSyncStatus('syncing', 'Archiving...');
+  if (isSyncing) { saveLocal(); return; }
   isSyncing = true;
+  setSyncStatus('syncing', 'Archiving...');
   try {
     const combined = [
       ...salesArchive.map(a => ({...a, type:'sales'})),
@@ -884,6 +896,11 @@ async function pushArchive() {
   }
   isSyncing = false;
   rerender();
+}
+
+// syncAll kept for manual ↻ Sync button compatibility
+async function syncAll(push) {
+  if (push) { await flushWrite(); } else { await pullFromSheets(); }
 }
 
 // ─── TABS & MODALS ────────────────────────────────
@@ -1550,35 +1567,33 @@ function renderSalesDayChart() {
     emptyMsg.textContent = 'No sales yet this month';
     const ctx = canvas.getContext('2d');
     canvas.width = canvas.parentElement.clientWidth || 300;
-    canvas.height = 52;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.height = 52; ctx.clearRect(0,0,canvas.width,canvas.height);
     return;
   }
   emptyMsg.textContent = '';
-  const [yr, mo] = mk.split('-').map(Number);
-  const totalDays = new Date(yr, mo, 0).getDate();
+  const [yr,mo] = mk.split('-').map(Number);
+  const totalDays = new Date(yr,mo,0).getDate();
   const byDay = {};
-  list.forEach(t => { const d = parseInt(t.date.split('/')[0]); byDay[d] = (byDay[d]||0) + t.profit; });
+  list.forEach(t=>{const d=parseInt(t.date.split('/')[0]);byDay[d]=(byDay[d]||0)+t.profit;});
   const now = new Date();
-  const isCurrent = mk === (now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+  const isCurrent = mk===(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
   const maxDay = isCurrent ? now.getDate() : totalDays;
-  const days = Array.from({length: maxDay}, (_,i) => i+1);
-  const values = days.map(d => byDay[d]||0);
-  const maxVal = Math.max(...values, 0.01);
-  const dpr = window.devicePixelRatio || 1;
-  const W = Math.max(50, canvas.parentElement.clientWidth - 28);
+  const days = Array.from({length:maxDay},(_,i)=>i+1);
+  const values = days.map(d=>byDay[d]||0);
+  const maxVal = Math.max(...values,0.01);
+  const dpr = window.devicePixelRatio||1;
+  const W = Math.max(50,canvas.parentElement.clientWidth-28);
   const H = 52;
-  canvas.width = W * dpr; canvas.height = H * dpr;
-  canvas.style.width = W+'px'; canvas.style.height = H+'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, W, H);
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
   const padL=2,padR=2,padT=4,padB=14;
-  const chartW=W-padL-padR, chartH=H-padT-padB;
-  const gap=chartW/days.length, barW=Math.max(2,gap-1.5);
+  const chartW=W-padL-padR,chartH=H-padT-padB;
+  const gap=chartW/days.length,barW=Math.max(2,gap-1.5);
   days.forEach((d,i)=>{
-    const v=values[i], bh=v>0?Math.max(3,(v/maxVal)*chartH):(v<0?3:0);
-    const x=padL+i*gap+(gap-barW)/2, barY=padT+chartH-bh;
+    const v=values[i],bh=v>0?Math.max(3,(v/maxVal)*chartH):(v<0?3:0);
+    const x=padL+i*gap+(gap-barW)/2,barY=padT+chartH-bh;
     const isToday=isCurrent&&d===now.getDate();
     if(v===0){ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fillRect(x,padT+chartH-2,barW,2);return;}
     if(v>0){const g=ctx.createLinearGradient(0,barY,0,barY+bh);g.addColorStop(0,isToday?'rgba(251,191,36,0.9)':'rgba(74,222,128,0.85)');g.addColorStop(1,isToday?'rgba(251,191,36,0.25)':'rgba(74,222,128,0.2)');ctx.fillStyle=g;}
@@ -1592,7 +1607,7 @@ function renderSalesDayChart() {
   const every=days.length<=10?1:days.length<=20?2:5;
   days.forEach((d,i)=>{if(d===1||d%every===0||d===maxDay)ctx.fillText(d,padL+i*gap+gap/2,H-2);});
 }
-window.addEventListener('resize', ()=>renderSalesDayChart());
+window.addEventListener('resize',()=>renderSalesDayChart());
 
 // ─── RERENDER ─────────────────────────────────────
 function rerender() {
@@ -1606,33 +1621,26 @@ function rerender() {
 
 // ─── AUTO SYNC ────────────────────────────────────
 let lastSyncTime = 0;
-const SYNC_COOLDOWN = 30000; // don't sync more than once per 30s
+const SYNC_COOLDOWN = 30000;
+let autoSyncTimer = null;
 
-async function autoSync() {
-  const now = Date.now();
-  if (isSyncing) return;
-  if (now - lastSyncTime < SYNC_COOLDOWN) return;
-  lastSyncTime = now;
-  await syncAll(false);
+function scheduleAutoSync() {
+  if (autoSyncTimer) clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(async () => {
+    autoSyncTimer = null;
+    if (isSyncing) return;
+    if (Date.now() - lastSyncTime < SYNC_COOLDOWN) return;
+    lastSyncTime = Date.now();
+    await pullFromSheets();
+  }, 400); // 400ms debounce — collapses focus + visibilitychange firing together
 }
 
-// Sync when tab becomes visible again (switching back from another tab)
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    autoSync();
-  }
+  if (document.visibilityState === 'visible') scheduleAutoSync();
 });
-
-// Sync when window gets focus (clicking back on browser window)
-window.addEventListener('focus', () => {
-  autoSync();
-});
-
-// Background sync every 2 minutes while tab is open
+window.addEventListener('focus', () => scheduleAutoSync());
 setInterval(() => {
-  if (document.visibilityState === 'visible') {
-    autoSync();
-  }
+  if (document.visibilityState === 'visible') scheduleAutoSync();
 }, 120000);
 
 // ─── INIT ─────────────────────────────────────────
