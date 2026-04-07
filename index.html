@@ -299,7 +299,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     </div>
   </div>
   <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(167,139,250,0.3);">
-    <p class="ml">Net (Done Profits − Banned Losses)</p>
+    <p class="ml">Net (Monthly Profit − Banned Losses)</p>
     <div class="dual-val"><span class="dv-main" id="net-metric-sales">$0.00</span><span class="dv-sub" id="net-metric-sales-egp">≈ E£0</span></div>
   </div>
   <div class="card">
@@ -385,7 +385,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     <div class="metric"><p class="ml">Transactions</p><p class="mv" id="sp-count">0</p></div>
   </div>
   <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;">
-    <p class="ml">Net (Done Profits − Banned Losses)</p>
+    <p class="ml">Net (Monthly Profit − Banned Losses)</p>
     <div class="dual-val"><span class="dv-main" id="net-metric-spending">$0.00</span><span class="dv-sub" id="net-metric-spending-egp">≈ E£0</span></div>
   </div>
   <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
@@ -538,7 +538,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     <!-- populated by JS -->
   </div>
   <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;">
-    <p class="ml">Net (Done Profits − Banned Losses)</p>
+    <p class="ml">Net (Monthly Profit − Banned Losses)</p>
     <div class="dual-val"><span class="dv-main" id="net-metric-wallets">$0.00</span><span class="dv-sub" id="net-metric-wallets-egp">≈ E£0</span></div>
   </div>
   <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
@@ -560,7 +560,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
 
   <!-- Net metric prominent at top -->
   <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:14px 16px;border-color:rgba(167,139,250,0.3);">
-    <p class="ml" style="margin-bottom:6px;">Net = Done Profits − Banned Losses</p>
+    <p class="ml" style="margin-bottom:6px;">Net = Monthly Profit − Banned Losses</p>
     <div class="dual-val"><span class="dv-main" id="sk-net">$0.00</span><span class="dv-sub" id="sk-net-egp">≈ E£0</span></div>
   </div>
   <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
@@ -682,7 +682,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     <div class="metric"><p class="ml">All-time spent</p><p class="mv mv-red" id="arch-total-spend">$0.00</p></div>
   </div>
   <div class="metric" style="margin-bottom:16px;border-radius:var(--rl);padding:12px 14px;">
-    <p class="ml">Net (Done Profits − Banned Losses)</p>
+    <p class="ml">Net (Monthly Profit − Banned Losses)</p>
     <div class="dual-val"><span class="dv-main" id="net-metric-archive">$0.00</span><span class="dv-sub" id="net-metric-archive-egp">≈ E£0</span></div>
   </div>
   <div class="metric" style="margin-bottom:16px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
@@ -977,18 +977,17 @@ async function syncAll(push) {
   setSyncStatus('syncing', push ? 'Saving...' : 'Syncing...');
   try {
     if (push) {
-      // Core sheets always write — stock is best-effort (Apps Script may not handle it yet)
       await Promise.all([
         sheetWrite('sales', salesToRows(sales)),
         sheetWrite('spending', spendingToRows(spending)),
+        sheetWrite('stock', stockToRows(stock)),
       ]);
-      sheetWrite('stock', stockToRows(stock)).catch(e => console.warn('stock write skipped:', e.message));
     } else {
-      // Read core sheets — any failure here is a real error
-      const [sRows, spRows, archRows] = await Promise.all([
+      const [sRows, spRows, archRows, stRows] = await Promise.all([
         sheetRead('sales'),
         sheetRead('spending'),
         sheetRead('archive'),
+        sheetRead('stock'),
       ]);
       if (sRows && sRows.length) sales = rowsToSales(sRows);
       if (spRows && spRows.length) spending = rowsToSpending(spRows);
@@ -997,11 +996,7 @@ async function syncAll(push) {
         salesArchive = all.filter(a => a.type === 'sales' || (a.stats && a.stats.rev !== undefined));
         spendArchive = all.filter(a => a.type === 'spend' || (a.stats && a.stats.funded !== undefined));
       }
-      // Stock sheet is optional — silently skip if Apps Script doesn't support it yet
-      try {
-        const stRows = await sheetRead('stock');
-        if (stRows && stRows.length) stock = rowsToStock(stRows);
-      } catch(e) { console.warn('stock read skipped:', e.message); }
+      if (stRows && stRows.length) stock = rowsToStock(stRows);
     }
     saveLocal();
     setSyncStatus('ok', push ? 'Saved ✓' : 'Synced ✓');
@@ -1202,6 +1197,9 @@ function renderSalesStats() {
     if (el) { el.textContent = fmtUSD(profit); el.className = 'dv-main '+(profit>=0?'mv-green':'mv-red'); }
     if (elEgp) elEgp.textContent = profitEGP;
   });
+
+  // Update Net metric (monthly profit − banned losses) across all tabs
+  updateNetMetric();
 }
 
 function renderSales() {
@@ -1748,9 +1746,11 @@ function skDef(f) {
   return parseFloat(document.getElementById({buy:'sk-def-buy',sell:'sk-def-sell',salary:'sk-def-salary'}[f]).value)||0;
 }
 function calcNet() {
-  const doneProfit  = stock.filter(a=>a.status==='done').reduce((s,a)=>s+(a.sellPrice-a.buyPrice-a.salary),0);
-  const bannedLoss  = stock.filter(a=>a.status==='banned').reduce((s,a)=>s+a.buyPrice,0);
-  return doneProfit - bannedLoss;
+  // Net = This month's sales profit − banned account losses
+  const mk = getVM('s-month-view');
+  const monthlyProfit = filterByMonth(sales, mk).reduce((s,t)=>s+t.profit, 0);
+  const bannedLoss    = stock.filter(a=>a.status==='banned').reduce((s,a)=>s+a.buyPrice, 0);
+  return monthlyProfit - bannedLoss;
 }
 function updateNetMetric() {
   const net = calcNet();
