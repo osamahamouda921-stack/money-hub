@@ -977,17 +977,18 @@ async function syncAll(push) {
   setSyncStatus('syncing', push ? 'Saving...' : 'Syncing...');
   try {
     if (push) {
+      // Core sheets always write — stock is best-effort (Apps Script may not handle it yet)
       await Promise.all([
         sheetWrite('sales', salesToRows(sales)),
         sheetWrite('spending', spendingToRows(spending)),
-        sheetWrite('stock', stockToRows(stock)),
       ]);
+      sheetWrite('stock', stockToRows(stock)).catch(e => console.warn('stock write skipped:', e.message));
     } else {
-      const [sRows, spRows, archRows, stRows] = await Promise.all([
+      // Read core sheets — any failure here is a real error
+      const [sRows, spRows, archRows] = await Promise.all([
         sheetRead('sales'),
         sheetRead('spending'),
         sheetRead('archive'),
-        sheetRead('stock'),
       ]);
       if (sRows && sRows.length) sales = rowsToSales(sRows);
       if (spRows && spRows.length) spending = rowsToSpending(spRows);
@@ -996,7 +997,11 @@ async function syncAll(push) {
         salesArchive = all.filter(a => a.type === 'sales' || (a.stats && a.stats.rev !== undefined));
         spendArchive = all.filter(a => a.type === 'spend' || (a.stats && a.stats.funded !== undefined));
       }
-      if (stRows && stRows.length) stock = rowsToStock(stRows);
+      // Stock sheet is optional — silently skip if Apps Script doesn't support it yet
+      try {
+        const stRows = await sheetRead('stock');
+        if (stRows && stRows.length) stock = rowsToStock(stRows);
+      } catch(e) { console.warn('stock read skipped:', e.message); }
     }
     saveLocal();
     setSyncStatus('ok', push ? 'Saved ✓' : 'Synced ✓');
