@@ -213,6 +213,12 @@ body::after{
 /* Grouped category select styling */
 select optgroup{color:var(--muted);font-size:10px;font-weight:600;letter-spacing:0.5px;background:var(--surface);}
 select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
+/* ── STOCK PAGE ── */
+.g4{grid-template-columns:repeat(4,1fr);}
+.sk-fresh{color:#60a5fa;} .sk-done{color:#4ade80;} .sk-banned{color:#f87171;}
+.sk-input{width:100%;height:26px;font-size:11px;padding:0 5px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;outline:none;}
+.sk-input:focus{border-color:var(--accent);}
+@media(max-width:700px){.g4{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
 <body>
@@ -251,6 +257,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
   <button class="tab active" onclick="switchTab('sales')">Sales</button>
   <button class="tab" onclick="switchTab('spending')">Spending</button>
   <button class="tab" onclick="switchTab('wallets')">Wallets</button>
+  <button class="tab" onclick="switchTab('stock')">Stock</button>
   <button class="tab" onclick="switchTab('archive')">Archive</button>
 </div>
 </div>
@@ -290,6 +297,10 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
       <canvas id="sales-day-chart" style="width:100%;height:52px;display:block;"></canvas>
       <p style="font-size:10px;color:var(--hint);font-family:'DM Mono',monospace;margin-top:3px;" id="chart-empty-msg"></p>
     </div>
+  </div>
+  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(167,139,250,0.3);">
+    <p class="ml">Net (Done Profits − Banned Losses)</p>
+    <div class="dual-val"><span class="dv-main" id="net-metric-sales">$0.00</span><span class="dv-sub" id="net-metric-sales-egp">≈ E£0</span></div>
   </div>
   <div class="card">
     <p class="st">Add sale</p>
@@ -372,6 +383,14 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     <div class="metric"><p class="ml">Total funded</p><p class="mv mv-green" id="sp-funded">$0.00</p><p class="mv2" id="sp-funded-egp">≈ LE 0</p></div>
     <div class="metric"><p class="ml">Total spent</p><p class="mv mv-red" id="sp-spent">$0.00</p><p class="mv2" id="sp-spent-egp">≈ LE 0</p></div>
     <div class="metric"><p class="ml">Transactions</p><p class="mv" id="sp-count">0</p></div>
+  </div>
+  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;">
+    <p class="ml">Net (Done Profits − Banned Losses)</p>
+    <div class="dual-val"><span class="dv-main" id="net-metric-spending">$0.00</span><span class="dv-sub" id="net-metric-spending-egp">≈ E£0</span></div>
+  </div>
+  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
+    <p class="ml">📅 This Month's Sales Profit</p>
+    <div class="dual-val"><span class="dv-main mv-green" id="monthly-profit-spending">$0.00</span><span class="dv-sub" id="monthly-profit-spending-egp">≈ E£0</span></div>
   </div>
   <div class="card">
     <p class="st">Add funds</p>
@@ -518,6 +537,14 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
   <div class="wallet-grid" id="wallets-grid">
     <!-- populated by JS -->
   </div>
+  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;">
+    <p class="ml">Net (Done Profits − Banned Losses)</p>
+    <div class="dual-val"><span class="dv-main" id="net-metric-wallets">$0.00</span><span class="dv-sub" id="net-metric-wallets-egp">≈ E£0</span></div>
+  </div>
+  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
+    <p class="ml">📅 This Month's Sales Profit</p>
+    <div class="dual-val"><span class="dv-main mv-green" id="monthly-profit-wallets">$0.00</span><span class="dv-sub" id="monthly-profit-wallets-egp">≈ E£0</span></div>
+  </div>
   <div class="card" style="margin-top:6px;">
     <p class="st">Low balance threshold</p>
     <div class="row">
@@ -528,11 +555,139 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
   </div>
 </div>
 
+<!-- ═══ STOCK ═══ -->
+<div id="pane-stock" class="pane">
+
+  <!-- Net metric prominent at top -->
+  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:14px 16px;border-color:rgba(167,139,250,0.3);">
+    <p class="ml" style="margin-bottom:6px;">Net = Done Profits − Banned Losses</p>
+    <div class="dual-val"><span class="dv-main" id="sk-net">$0.00</span><span class="dv-sub" id="sk-net-egp">≈ E£0</span></div>
+  </div>
+  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
+    <p class="ml">📅 This Month's Sales Profit</p>
+    <div class="dual-val"><span class="dv-main mv-green" id="monthly-profit-stock">$0.00</span><span class="dv-sub" id="monthly-profit-stock-egp">≈ E£0</span></div>
+  </div>
+
+  <!-- Capital breakdown -->
+  <div class="metrics-grid g4" style="margin-bottom:10px;">
+    <div class="metric">
+      <p class="ml">Capital (no profit)</p>
+      <p class="mv mv-red" id="sk-capital">$0.00</p>
+      <p class="mv2" id="sk-capital-egp">≈ E£0</p>
+    </div>
+    <div class="metric">
+      <p class="ml">Capital (with profit)</p>
+      <p class="mv mv-green" id="sk-capital-profit">$0.00</p>
+      <p class="mv2" id="sk-capital-profit-egp">≈ E£0</p>
+    </div>
+    <div class="metric" style="border-color:rgba(74,222,128,0.2);">
+      <p class="ml">✅ Done Profit</p>
+      <p class="mv sk-done" id="sk-profit">$0.00</p>
+      <p class="mv2" id="sk-profit-egp">≈ E£0</p>
+    </div>
+    <div class="metric" style="border-color:rgba(248,113,113,0.2);">
+      <p class="ml">🚫 Banned Loss</p>
+      <p class="mv sk-banned" id="sk-banned-loss">$0.00</p>
+      <p class="mv2" id="sk-banned-loss-egp">≈ E£0</p>
+    </div>
+  </div>
+
+  <!-- Status breakdown: fresh and done only -->
+  <div class="metrics-grid g2" style="margin-bottom:10px;">
+    <div class="metric" style="border-color:rgba(96,165,250,0.2);">
+      <p class="ml">🆕 Fresh Accounts</p>
+      <p class="mv sk-fresh" id="sk-c-fresh">0</p>
+      <p class="mv2" id="sk-v-fresh">$0.00 cost</p>
+    </div>
+    <div class="metric" style="border-color:rgba(74,222,128,0.2);">
+      <p class="ml">✅ Done & Listed</p>
+      <p class="mv sk-done" id="sk-c-done">0</p>
+      <p class="mv2" id="sk-v-done">$0.00 profit</p>
+    </div>
+  </div>
+
+  <!-- Defaults -->
+  <div class="card" style="margin-bottom:10px;">
+    <p class="st">Default Prices</p>
+    <div class="row">
+      <span style="font-size:12px;color:var(--muted);">Buy $</span>
+      <input type="number" id="sk-def-buy" placeholder="e.g. 5.00" style="width:90px;" min="0" step="0.01" oninput="saveStockDef()">
+      <span style="font-size:12px;color:var(--muted);">Sell $</span>
+      <input type="number" id="sk-def-sell" placeholder="e.g. 15.00" style="width:90px;" min="0" step="0.01" oninput="saveStockDef()">
+      <span style="font-size:12px;color:var(--muted);">Salary $</span>
+      <input type="number" id="sk-def-salary" placeholder="e.g. 2.00" style="width:90px;" min="0" step="0.01" oninput="saveStockDef()">
+    </div>
+    <p class="hint-text">Leave any field empty when adding to use these defaults.</p>
+  </div>
+
+  <!-- Add accounts -->
+  <div class="card" style="margin-bottom:10px;">
+    <p class="st">Add Account(s)</p>
+    <div class="row">
+      <input type="text" id="sk-add-name" placeholder="Account name / ID" style="flex:1;min-width:130px;">
+      <select id="sk-add-status" style="width:105px;">
+        <option value="fresh">🆕 Fresh</option>
+        <option value="done">✅ Done</option>
+      </select>
+      <input type="number" id="sk-add-buy" placeholder="Buy $" style="width:82px;" min="0" step="0.01">
+      <input type="number" id="sk-add-sell" placeholder="Sell $" style="width:82px;" min="0" step="0.01">
+      <input type="number" id="sk-add-salary" placeholder="Salary $" style="width:82px;" min="0" step="0.01">
+      <input type="text" id="sk-add-note" placeholder="Note" style="width:110px;">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span style="font-size:12px;color:var(--muted);">×</span>
+        <input type="number" id="sk-add-qty" value="1" min="1" style="width:50px;">
+      </div>
+      <button class="btn-g" onclick="addStockAccounts()">+ Add</button>
+    </div>
+    <div class="warn" id="sk-warn">Please enter an account name.</div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="log-header">
+      <p class="st" style="margin:0;">Accounts</p>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
+        <select id="sk-filter" onchange="renderStock()" style="height:28px;font-size:12px;">
+          <option value="all">All</option>
+          <option value="fresh">🆕 Fresh</option>
+          <option value="done">✅ Done</option>
+          <option value="banned">🚫 Banned</option>
+        </select>
+        <input type="search" id="sk-search" placeholder="Search..." style="height:28px;font-size:12px;width:140px;" oninput="renderStock()">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:68px;">Date</th>
+          <th>Account</th>
+          <th style="width:100px;">Status</th>
+          <th style="width:78px;">Buy $</th>
+          <th style="width:78px;">Sell $</th>
+          <th style="width:78px;">Salary $</th>
+          <th style="width:78px;">Net</th>
+          <th style="width:95px;">Note</th>
+          <th style="width:44px;"></th>
+        </tr></thead>
+        <tbody id="sk-body"><tr><td colspan="9" class="empty-state">No accounts yet</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ ARCHIVE ═══ -->
 <div id="pane-archive" class="pane">
   <div class="metrics-grid g2" style="margin-bottom:16px;">
     <div class="metric"><p class="ml">All-time profit</p><p class="mv mv-green" id="arch-total-profit">$0.00</p></div>
     <div class="metric"><p class="ml">All-time spent</p><p class="mv mv-red" id="arch-total-spend">$0.00</p></div>
+  </div>
+  <div class="metric" style="margin-bottom:16px;border-radius:var(--rl);padding:12px 14px;">
+    <p class="ml">Net (Done Profits − Banned Losses)</p>
+    <div class="dual-val"><span class="dv-main" id="net-metric-archive">$0.00</span><span class="dv-sub" id="net-metric-archive-egp">≈ E£0</span></div>
+  </div>
+  <div class="metric" style="margin-bottom:16px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
+    <p class="ml">📅 This Month's Sales Profit</p>
+    <div class="dual-val"><span class="dv-main mv-green" id="monthly-profit-archive">$0.00</span><span class="dv-sub" id="monthly-profit-archive-egp">≈ E£0</span></div>
   </div>
   <div class="card">
     <p class="st">Monthly sales archive</p>
@@ -579,6 +734,8 @@ let sales = [];
 let spending = [];
 let salesArchive = [];
 let spendArchive = [];
+let stock = [];
+let isSyncing = false;
 let activeGroupFilter = "all";
 
 // ─── DATE UTILITIES ───────────────────────────────
@@ -796,6 +953,7 @@ function saveLocal() {
   try { localStorage.setItem('mh_spending', JSON.stringify(spending)); } catch(e) {}
   try { localStorage.setItem('mh_salesarch', JSON.stringify(salesArchive)); } catch(e) {}
   try { localStorage.setItem('mh_spendarch', JSON.stringify(spendArchive)); } catch(e) {}
+  try { localStorage.setItem('mh_stock', JSON.stringify(stock)); } catch(e) {}
 }
 
 function loadLocal() {
@@ -803,6 +961,7 @@ function loadLocal() {
   try { spending = JSON.parse(localStorage.getItem('mh_spending')||'[]'); } catch(e) { spending=[]; }
   try { salesArchive = JSON.parse(localStorage.getItem('mh_salesarch')||'[]'); } catch(e) { salesArchive=[]; }
   try { spendArchive = JSON.parse(localStorage.getItem('mh_spendarch')||'[]'); } catch(e) { spendArchive=[]; }
+  try { stock = JSON.parse(localStorage.getItem('mh_stock')||'[]'); } catch(e) { stock=[]; }
   // Migrate old keys
   if (!sales.length) { try { const o=JSON.parse(localStorage.getItem('mh_sales_v4')||localStorage.getItem('mh_sales_v3')||'[]'); if(o.length) sales=o; } catch(e){} }
   if (!spending.length) { try { const o=JSON.parse(localStorage.getItem('mh_spending_v4')||localStorage.getItem('mh_spending_v3')||'[]'); if(o.length) spending=o; } catch(e){} }
@@ -812,20 +971,47 @@ function loadLocal() {
 }
 
 // ─── SYNC ─────────────────────────────────────────
-// Write queue — only ONE write ever in-flight at a time.
-// If a write is pending while one is in-flight, it waits and
-// collapses all queued requests into a single write.
-let isSyncing = false;
-let writeQueued = false;
-
-async function flushWrite() {
-  if (isSyncing) {
-    writeQueued = true; // another write came in — will retry after current one
-    return;
-  }
+async function syncAll(push) {
+  if (isSyncing) return;
   isSyncing = true;
-  writeQueued = false;
+  setSyncStatus('syncing', push ? 'Saving...' : 'Syncing...');
+  try {
+    if (push) {
+      await Promise.all([
+        sheetWrite('sales', salesToRows(sales)),
+        sheetWrite('spending', spendingToRows(spending)),
+        sheetWrite('stock', stockToRows(stock)),
+      ]);
+    } else {
+      const [sRows, spRows, archRows, stRows] = await Promise.all([
+        sheetRead('sales'),
+        sheetRead('spending'),
+        sheetRead('archive'),
+        sheetRead('stock'),
+      ]);
+      if (sRows && sRows.length) sales = rowsToSales(sRows);
+      if (spRows && spRows.length) spending = rowsToSpending(spRows);
+      if (archRows && archRows.length) {
+        const all = rowsToArchive(archRows);
+        salesArchive = all.filter(a => a.type === 'sales' || (a.stats && a.stats.rev !== undefined));
+        spendArchive = all.filter(a => a.type === 'spend' || (a.stats && a.stats.funded !== undefined));
+      }
+      if (stRows && stRows.length) stock = rowsToStock(stRows);
+    }
+    saveLocal();
+    setSyncStatus('ok', push ? 'Saved ✓' : 'Synced ✓');
+  } catch(e) {
+    console.error('Sync error', e);
+    setSyncStatus('err', 'Sync failed');
+  }
+  isSyncing = false;
+  populateMonthSelectors();
+  rerender();
+}
+
+async function pushData() {
   setSyncStatus('syncing', 'Saving...');
+  isSyncing = true;
   try {
     await Promise.all([
       sheetWrite('sales', salesToRows(sales)),
@@ -834,54 +1020,17 @@ async function flushWrite() {
     saveLocal();
     setSyncStatus('ok', 'Saved ✓');
   } catch(e) {
-    saveLocal();
+    saveLocal(); // at least save locally
     setSyncStatus('err', 'Save failed — kept locally');
   }
   isSyncing = false;
-  // If another write was requested while we were busy, flush it now
-  if (writeQueued) flushWrite();
-}
-
-async function pullFromSheets() {
-  if (isSyncing) return; // don't pull while a write is in-flight
-  isSyncing = true;
-  setSyncStatus('syncing', 'Syncing...');
-  try {
-    const [sRows, spRows, archRows] = await Promise.all([
-      sheetRead('sales'),
-      sheetRead('spending'),
-      sheetRead('archive'),
-    ]);
-    if (sRows && sRows.length) sales = rowsToSales(sRows);
-    if (spRows && spRows.length) spending = rowsToSpending(spRows);
-    if (archRows && archRows.length) {
-      const all = rowsToArchive(archRows);
-      salesArchive = all.filter(a => a.type === 'sales' || (a.stats && a.stats.rev !== undefined));
-      spendArchive = all.filter(a => a.type === 'spend' || (a.stats && a.stats.funded !== undefined));
-    }
-    saveLocal();
-    setSyncStatus('ok', 'Synced ✓');
-  } catch(e) {
-    console.error('Pull error', e);
-    setSyncStatus('err', 'Sync failed');
-  }
-  isSyncing = false;
   populateMonthSelectors();
   rerender();
-}
-
-// pushData: called every time user adds/edits/deletes a record
-async function pushData() {
-  saveLocal();           // save to localStorage immediately — never lose data
-  populateMonthSelectors();
-  rerender();
-  await flushWrite();   // queued write — safe if another is already in-flight
 }
 
 async function pushArchive() {
-  if (isSyncing) { saveLocal(); return; }
-  isSyncing = true;
   setSyncStatus('syncing', 'Archiving...');
+  isSyncing = true;
   try {
     const combined = [
       ...salesArchive.map(a => ({...a, type:'sales'})),
@@ -898,18 +1047,14 @@ async function pushArchive() {
   rerender();
 }
 
-// syncAll kept for manual ↻ Sync button compatibility
-async function syncAll(push) {
-  if (push) { await flushWrite(); } else { await pullFromSheets(); }
-}
-
 // ─── TABS & MODALS ────────────────────────────────
 function switchTab(t) {
-  const names = ['sales','spending','wallets','archive'];
+  const names = ['sales','spending','wallets','stock','archive'];
   document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', names[i]===t));
   names.forEach(n => document.getElementById('pane-'+n).classList.toggle('active', n===t));
   if (t==='archive') renderArchive();
   if (t==='wallets') renderWallets();
+  if (t==='stock') renderStock();
 }
 function openModal(id) { document.getElementById(id).classList.add('open'); renderModalArchive(id); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -1043,6 +1188,15 @@ function renderSalesStats() {
     goalLabel.textContent = 'Set a goal above';
     goalPct.textContent = '';
   }
+
+  // Push monthly profit to all other tabs
+  const profitEGP = '≈ ' + fmtEGP(profit * EGP());
+  ['spending','wallets','stock','archive'].forEach(tab => {
+    const el = document.getElementById('monthly-profit-'+tab);
+    const elEgp = document.getElementById('monthly-profit-'+tab+'-egp');
+    if (el) { el.textContent = fmtUSD(profit); el.className = 'dv-main '+(profit>=0?'mv-green':'mv-red'); }
+    if (elEgp) elEgp.textContent = profitEGP;
+  });
 }
 
 function renderSales() {
@@ -1556,34 +1710,195 @@ function renderWallets() {
   document.getElementById('wt-egp').textContent = fmtEGP(totalUSD * EGP());
 }
 
-// ─── SALES/DAY CHART ─────────────────────────────
-function renderSalesDayChart() {
-  const canvas = document.getElementById('sales-day-chart');
-  if (!canvas) return;
-  const mk = getVM('s-month-view');
-  const list = filterByMonth(sales, mk);
-  const emptyMsg = document.getElementById('chart-empty-msg');
-  if (!list.length) {
-    emptyMsg.textContent = 'No sales yet this month';
-    const ctx = canvas.getContext('2d');
-    canvas.width = canvas.parentElement.clientWidth || 300;
-    canvas.height = 52; ctx.clearRect(0,0,canvas.width,canvas.height);
+// ─── STOCK ────────────────────────────────────────
+function stockToRows(arr) {
+  const rows=[['id','date','name','status','buyPrice','sellPrice','salary','note']];
+  arr.forEach(a=>rows.push([a.id,a.date,a.name,a.status,a.buyPrice,a.sellPrice,a.salary,a.note||'']));
+  return rows;
+}
+function rowsToStock(rows) {
+  if(!rows||rows.length<2) return [];
+  return rows.slice(1).filter(r=>r[0]).map(r=>({
+    id:String(r[0]), date:sanitizeDate(r[1]), name:String(r[2]||''),
+    status:String(r[3]||'fresh'), buyPrice:parseFloat(r[4])||0,
+    sellPrice:parseFloat(r[5])||0, salary:parseFloat(r[6])||0, note:String(r[7]||'')
+  }));
+}
+function saveStockDef() {
+  try { localStorage.setItem('mh_skdef', JSON.stringify({
+    buy:document.getElementById('sk-def-buy').value,
+    sell:document.getElementById('sk-def-sell').value,
+    salary:document.getElementById('sk-def-salary').value
+  })); } catch(e) {}
+}
+function loadStockDef() {
+  try {
+    const d=JSON.parse(localStorage.getItem('mh_skdef')||'{}');
+    if(d.buy)    document.getElementById('sk-def-buy').value=d.buy;
+    if(d.sell)   document.getElementById('sk-def-sell').value=d.sell;
+    if(d.salary) document.getElementById('sk-def-salary').value=d.salary;
+  } catch(e) {}
+}
+function skDef(f) {
+  return parseFloat(document.getElementById({buy:'sk-def-buy',sell:'sk-def-sell',salary:'sk-def-salary'}[f]).value)||0;
+}
+function calcNet() {
+  const doneProfit  = stock.filter(a=>a.status==='done').reduce((s,a)=>s+(a.sellPrice-a.buyPrice-a.salary),0);
+  const bannedLoss  = stock.filter(a=>a.status==='banned').reduce((s,a)=>s+a.buyPrice,0);
+  return doneProfit - bannedLoss;
+}
+function updateNetMetric() {
+  const net = calcNet();
+  const cls = net>=0 ? 'mv-green' : 'mv-red';
+  ['net-metric-sales','net-metric-spending','net-metric-wallets','net-metric-archive','sk-net'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.textContent=fmtUSD(net);
+    el.className='dv-main '+cls;
+  });
+  ['net-metric-sales-egp','net-metric-spending-egp','net-metric-wallets-egp','net-metric-archive-egp','sk-net-egp'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent='≈ '+fmtEGP(net*EGP());
+  });
+}
+function addStockAccounts() {
+  const name=document.getElementById('sk-add-name').value.trim();
+  const warn=document.getElementById('sk-warn');
+  if(!name){warn.style.display='block';setTimeout(()=>warn.style.display='none',2500);return;}
+  warn.style.display='none';
+  const status=document.getElementById('sk-add-status').value;
+  const buyRaw=document.getElementById('sk-add-buy').value;
+  const sellRaw=document.getElementById('sk-add-sell').value;
+  const salRaw=document.getElementById('sk-add-salary').value;
+  const note=document.getElementById('sk-add-note').value.trim();
+  const qty=Math.max(1,parseInt(document.getElementById('sk-add-qty').value)||1);
+  const buy   =buyRaw !==''?parseFloat(buyRaw) :skDef('buy');
+  const sell  =sellRaw!==''?parseFloat(sellRaw):skDef('sell');
+  const salary=salRaw !==''?parseFloat(salRaw) :skDef('salary');
+  for(let i=0;i<qty;i++){
+    stock.push({
+      id:Date.now()+'_'+Math.random().toString(36).slice(2,7),
+      date:today(), name:qty>1?name+' #'+(i+1):name,
+      status, buyPrice:buy, sellPrice:sell, salary, note
+    });
+  }
+  ['sk-add-name','sk-add-buy','sk-add-sell','sk-add-salary','sk-add-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sk-add-qty').value='1';
+  pushData();
+}
+function updateStock(id,field,value) {
+  const acc=stock.find(a=>a.id===id);
+  if(!acc) return;
+  if(field==='status'&&value==='banned'){
+    acc.status='banned'; acc.salary=0; // team refunds salary on ban
+  } else {
+    acc[field]=['buyPrice','sellPrice','salary'].includes(field)?(parseFloat(value)||0):value;
+  }
+  renderStock();
+  pushData();
+}
+function deleteStock(id) {
+  if(!confirm('Delete this account?')) return;
+  stock=stock.filter(a=>a.id!==id);
+  pushData();
+}
+function renderStockStats() {
+  const fresh =stock.filter(a=>a.status==='fresh');
+  const done  =stock.filter(a=>a.status==='done');
+  const banned=stock.filter(a=>a.status==='banned');
+  const doneProfit =done.reduce((s,a)=>s+(a.sellPrice-a.buyPrice-a.salary),0);
+  const bannedLoss =banned.reduce((s,a)=>s+a.buyPrice,0);
+  const net        =doneProfit-bannedLoss;
+  const allBuy     =stock.reduce((s,a)=>s+a.buyPrice,0);
+  const allSalaries=done.reduce((s,a)=>s+a.salary,0);
+  const capitalRaw =(allBuy+allSalaries)-bannedLoss;
+  const capitalFull=capitalRaw+doneProfit;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('sk-net',        fmtUSD(net));
+  set('sk-net-egp',    '≈ '+fmtEGP(net*EGP()));
+  // color net
+  const nel=document.getElementById('sk-net');
+  if(nel) nel.className='dv-main '+(net>=0?'mv-green':'mv-red');
+  set('sk-capital',            fmtUSD(capitalRaw));
+  set('sk-capital-egp',        '≈ '+fmtEGP(capitalRaw*EGP()));
+  set('sk-capital-profit',     fmtUSD(capitalFull));
+  set('sk-capital-profit-egp', '≈ '+fmtEGP(capitalFull*EGP()));
+  set('sk-profit',             fmtUSD(doneProfit));
+  set('sk-profit-egp',         '≈ '+fmtEGP(doneProfit*EGP()));
+  set('sk-banned-loss',        fmtUSD(bannedLoss));
+  set('sk-banned-loss-egp',    '≈ '+fmtEGP(bannedLoss*EGP()));
+  set('sk-c-fresh',  fresh.length);
+  set('sk-v-fresh',  fmtUSD(fresh.reduce((s,a)=>s+a.buyPrice,0))+' cost');
+  set('sk-c-done',   done.length);
+  set('sk-v-done',   fmtUSD(doneProfit)+' profit');
+  // update net on all tabs
+  updateNetMetric();
+}
+function renderStock() {
+  renderStockStats();
+  const body=document.getElementById('sk-body');
+  if(!body) return;
+  const fStatus=document.getElementById('sk-filter').value;
+  const query=document.getElementById('sk-search').value.trim().toLowerCase();
+  let list=[...stock].reverse();
+  if(fStatus!=='all') list=list.filter(a=>a.status===fStatus);
+  if(query) list=list.filter(a=>a.name.toLowerCase().includes(query)||(a.note||'').toLowerCase().includes(query));
+  if(!list.length){
+    body.innerHTML='<tr><td colspan="9" class="empty-state">'+(query?'No results for "'+query+'"':'No accounts yet')+'</td></tr>';
     return;
   }
-  emptyMsg.textContent = '';
-  const [yr,mo] = mk.split('-').map(Number);
-  const totalDays = new Date(yr,mo,0).getDate();
-  const byDay = {};
+  const opts=['fresh|🆕 Fresh','done|✅ Done','banned|🚫 Banned'].map(s=>{
+    const[v,l]=s.split('|');return`<option value="${v}">${l}</option>`;
+  }).join('');
+  body.innerHTML=list.map(a=>{
+    const net=a.status==='banned'?-a.buyPrice:a.status==='done'?(a.sellPrice-a.buyPrice-a.salary):null;
+    const netStr=net===null?'—':fmtUSD(net);
+    const netColor=net===null?'var(--muted)':net>=0?'var(--green)':'var(--red)';
+    const sid=a.id.replace(/'/g,"\\'");
+    return`<tr>
+      <td style="color:var(--muted);">${a.date}</td>
+      <td style="font-weight:600;">${a.name}</td>
+      <td><select class="sk-input" onchange="updateStock('${sid}','status',this.value)">
+        ${opts.replace(`value="${a.status}"`,`value="${a.status}" selected`)}
+      </select></td>
+      <td><input class="sk-input" type="number" value="${a.buyPrice}" min="0" step="0.01" style="color:var(--red);" onchange="updateStock('${sid}','buyPrice',this.value)"></td>
+      <td><input class="sk-input" type="number" value="${a.sellPrice}" min="0" step="0.01" style="color:var(--text);" onchange="updateStock('${sid}','sellPrice',this.value)"></td>
+      <td><input class="sk-input" type="number" value="${a.salary}" min="0" step="0.01" style="color:var(--amber);" onchange="updateStock('${sid}','salary',this.value)"></td>
+      <td style="font-weight:600;color:${netColor};">${netStr}</td>
+      <td style="color:var(--muted);font-size:11px;">${a.note||'—'}</td>
+      <td><button class="btn-del" onclick="deleteStock('${sid}')">x</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── SALES/DAY CHART ─────────────────────────────
+function renderSalesDayChart() {
+  const canvas=document.getElementById('sales-day-chart');
+  if(!canvas) return;
+  const mk=getVM('s-month-view');
+  const list=filterByMonth(sales,mk);
+  const emptyMsg=document.getElementById('chart-empty-msg');
+  if(!list.length){
+    emptyMsg.textContent='No sales yet this month';
+    const ctx=canvas.getContext('2d');
+    canvas.width=canvas.parentElement.clientWidth||300;
+    canvas.height=52; ctx.clearRect(0,0,canvas.width,canvas.height);
+    return;
+  }
+  emptyMsg.textContent='';
+  const[yr,mo]=mk.split('-').map(Number);
+  const totalDays=new Date(yr,mo,0).getDate();
+  const byDay={};
   list.forEach(t=>{const d=parseInt(t.date.split('/')[0]);byDay[d]=(byDay[d]||0)+t.profit;});
-  const now = new Date();
-  const isCurrent = mk===(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
-  const maxDay = isCurrent ? now.getDate() : totalDays;
-  const days = Array.from({length:maxDay},(_,i)=>i+1);
-  const values = days.map(d=>byDay[d]||0);
-  const maxVal = Math.max(...values,0.01);
-  const dpr = window.devicePixelRatio||1;
-  const W = Math.max(50,canvas.parentElement.clientWidth-28);
-  const H = 52;
+  const now=new Date();
+  const isCurrent=mk===(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+  const maxDay=isCurrent?now.getDate():totalDays;
+  const days=Array.from({length:maxDay},(_,i)=>i+1);
+  const values=days.map(d=>byDay[d]||0);
+  const maxVal=Math.max(...values,0.01);
+  const dpr=window.devicePixelRatio||1;
+  const W=Math.max(50,canvas.parentElement.clientWidth-28);
+  const H=52;
   canvas.width=W*dpr; canvas.height=H*dpr;
   canvas.style.width=W+'px'; canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d');
@@ -1596,10 +1911,14 @@ function renderSalesDayChart() {
     const x=padL+i*gap+(gap-barW)/2,barY=padT+chartH-bh;
     const isToday=isCurrent&&d===now.getDate();
     if(v===0){ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fillRect(x,padT+chartH-2,barW,2);return;}
-    if(v>0){const g=ctx.createLinearGradient(0,barY,0,barY+bh);g.addColorStop(0,isToday?'rgba(251,191,36,0.9)':'rgba(74,222,128,0.85)');g.addColorStop(1,isToday?'rgba(251,191,36,0.25)':'rgba(74,222,128,0.2)');ctx.fillStyle=g;}
+    if(v>0){const g=ctx.createLinearGradient(0,barY,0,barY+bh);
+      g.addColorStop(0,isToday?'rgba(251,191,36,0.9)':'rgba(74,222,128,0.85)');
+      g.addColorStop(1,isToday?'rgba(251,191,36,0.25)':'rgba(74,222,128,0.2)');ctx.fillStyle=g;}
     else{ctx.fillStyle='rgba(248,113,113,0.7)';}
     const r=Math.min(2,barW/2);
-    ctx.beginPath();ctx.moveTo(x+r,barY);ctx.lineTo(x+barW-r,barY);ctx.quadraticCurveTo(x+barW,barY,x+barW,barY+r);ctx.lineTo(x+barW,barY+bh);ctx.lineTo(x,barY+bh);ctx.lineTo(x,barY+r);ctx.quadraticCurveTo(x,barY,x+r,barY);ctx.fill();
+    ctx.beginPath();ctx.moveTo(x+r,barY);ctx.lineTo(x+barW-r,barY);
+    ctx.quadraticCurveTo(x+barW,barY,x+barW,barY+r);ctx.lineTo(x+barW,barY+bh);
+    ctx.lineTo(x,barY+bh);ctx.lineTo(x,barY+r);ctx.quadraticCurveTo(x,barY,x+r,barY);ctx.fill();
   });
   ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(padL,padT+chartH);ctx.lineTo(W-padR,padT+chartH);ctx.stroke();
@@ -1616,37 +1935,46 @@ function rerender() {
   renderSpendStats(); renderSpending();
   renderArchive();
   renderWallets();
+  renderStock();
   renderSalesDayChart();
 }
 
 // ─── AUTO SYNC ────────────────────────────────────
 let lastSyncTime = 0;
-const SYNC_COOLDOWN = 30000;
-let autoSyncTimer = null;
+const SYNC_COOLDOWN = 30000; // don't sync more than once per 30s
 
-function scheduleAutoSync() {
-  if (autoSyncTimer) clearTimeout(autoSyncTimer);
-  autoSyncTimer = setTimeout(async () => {
-    autoSyncTimer = null;
-    if (isSyncing) return;
-    if (Date.now() - lastSyncTime < SYNC_COOLDOWN) return;
-    lastSyncTime = Date.now();
-    await pullFromSheets();
-  }, 400); // 400ms debounce — collapses focus + visibilitychange firing together
+async function autoSync() {
+  const now = Date.now();
+  if (isSyncing) return;
+  if (now - lastSyncTime < SYNC_COOLDOWN) return;
+  lastSyncTime = now;
+  await syncAll(false);
 }
 
+// Sync when tab becomes visible again (switching back from another tab)
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') scheduleAutoSync();
+  if (document.visibilityState === 'visible') {
+    autoSync();
+  }
 });
-window.addEventListener('focus', () => scheduleAutoSync());
+
+// Sync when window gets focus (clicking back on browser window)
+window.addEventListener('focus', () => {
+  autoSync();
+});
+
+// Background sync every 2 minutes while tab is open
 setInterval(() => {
-  if (document.visibilityState === 'visible') scheduleAutoSync();
+  if (document.visibilityState === 'visible') {
+    autoSync();
+  }
 }, 120000);
 
 // ─── INIT ─────────────────────────────────────────
 (async function init() {
   loadLocal();
   loadGoal();
+  loadStockDef();
   document.getElementById('loading-text').textContent = 'Loading cached data...';
   rerender();
   document.getElementById('loading-text').textContent = 'Syncing with Google Sheets...';
