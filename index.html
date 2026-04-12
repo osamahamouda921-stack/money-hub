@@ -2042,35 +2042,45 @@ function deleteStock(id) {
 function markBanned(id) {
   const acc = stock.find(a=>a.id===id);
   if(!acc) return;
+  // Open the styled ban modal instead of browser prompt/confirm
+  document.getElementById('ban-modal-username').textContent = acc.username;
+  document.getElementById('ban-modal-cost').textContent = '$' + (acc.costed||0).toFixed(2);
+  document.getElementById('ban-modal-refund').value = '0';
+  document.getElementById('ban-modal-net').textContent = '$' + (acc.costed||0).toFixed(2);
+  document.getElementById('ban-modal-breakdown').style.display = 'none';
+  document.getElementById('modal-ban-account').dataset.id = id;
+  openModal('modal-ban-account');
+}
+
+function banModalUpdateNet() {
+  const id = document.getElementById('modal-ban-account').dataset.id;
+  const acc = stock.find(a=>a.id===id);
+  if(!acc) return;
   const totalCost = acc.costed||0;
-
-  // Ask what the worker is refunding (derank/MMR cost)
-  const refundStr = prompt(
-    '🚫 Banning: "' + acc.username + '"\n\n' +
-    'Total cost on this account: $' + totalCost.toFixed(2) + '\n\n' +
-    'How much is your worker refunding back to you?\n' +
-    '(Enter 0 if nothing is refunded)\n\n' +
-    'Tip: Workers usually refund the derank or MMR cost, not the fresh acc price.',
-    '0'
-  );
-  if(refundStr === null) return; // user cancelled
-
-  const refund = parseFloat(refundStr) || 0;
+  const refund = parseFloat(document.getElementById('ban-modal-refund').value)||0;
   const netLoss = Math.max(0, totalCost - refund);
+  document.getElementById('ban-modal-net').textContent = '$' + netLoss.toFixed(2);
+  const breakdown = document.getElementById('ban-modal-breakdown');
+  if(refund > 0) {
+    breakdown.style.display = 'flex';
+    document.getElementById('ban-modal-cost-row').textContent = '$' + totalCost.toFixed(2);
+    document.getElementById('ban-modal-refund-display').textContent = '-$' + refund.toFixed(2);
+  } else {
+    breakdown.style.display = 'none';
+  }
+}
 
-  if(!confirm(
-    'Confirm ban for "' + acc.username + '"?\n\n' +
-    'Total cost:      $' + totalCost.toFixed(2) + '\n' +
-    'Worker refund:  -$' + refund.toFixed(2) + '\n' +
-    '─────────────────────\n' +
-    'Net loss:        $' + netLoss.toFixed(2)
-  )) return;
-
+function confirmBan() {
+  const id = document.getElementById('modal-ban-account').dataset.id;
+  const acc = stock.find(a=>a.id===id);
+  if(!acc) return;
+  const refund = parseFloat(document.getElementById('ban-modal-refund').value)||0;
+  const netLoss = Math.max(0, (acc.costed||0) - refund);
   acc.status = 'banned';
-  acc.costed = netLoss;  // store the actual net loss after refund
-  acc.ban_refund = refund;  // record refund for reference
+  acc.costed = netLoss;
+  acc.ban_refund = refund;
+  closeModal('modal-ban-account');
   saveLocal(); renderStock(); syncStockSilent();
-
   // Toast
   const banner = document.createElement('div');
   banner.innerHTML = '🚫 Banned: <b>' + acc.username + '</b>' +
@@ -2180,11 +2190,11 @@ function renderStock() {
       return `<input type="checkbox" ${val?'checked':''} style="cursor:pointer;width:16px;height:16px;" onchange="updateStock('${sid}','${field}',this.checked)">`;
     }
 
-    // Action buttons: ban button (red) for active accounts, delete always
+    // Action buttons — match the style of sales/spending edit+delete buttons
     const banBtn = !isBanned && !isSold
-      ? `<button class="btn-del" title="Mark as Banned — records cost as loss" style="background:rgba(248,113,113,0.12);border-color:var(--red-border);font-size:10px;height:24px;padding:0 7px;white-space:nowrap;" onclick="markBanned('${sid}')">🚫 Ban</button>`
+      ? `<button class="btn-edit" title="Mark as Banned — records cost as loss" style="width:auto !important;padding:0 8px !important;font-size:10px !important;color:var(--red) !important;border-color:var(--red-border) !important;" onclick="markBanned('${sid}')">🚫 Ban</button>`
       : '';
-    const delBtn = `<button class="btn-del" title="Delete permanently" style="height:22px;width:22px;padding:0;font-size:11px;" onclick="deleteStock('${sid}')">×</button>`;
+    const delBtn = `<button class="btn-del" title="Delete permanently" onclick="deleteStock('${sid}')">×</button>`;
 
     // For banned rows show the loss amount prominently instead of editable status
     const statusCell = isBanned
@@ -2441,6 +2451,51 @@ setInterval(() => {
   lastSyncTime = Date.now();
 })();
 </script>
+
+<!-- Ban Account Modal -->
+<div class="modal-bg" id="modal-ban-account">
+  <div class="modal" style="min-width:320px;max-width:420px;width:90vw;">
+    <button class="modal-close" onclick="closeModal('modal-ban-account')">&#x2715;</button>
+    <h3 style="margin-bottom:4px;">🚫 Ban Account</h3>
+    <p style="font-size:13px;color:var(--amber);font-family:'DM Mono',monospace;margin-bottom:16px;font-weight:600;" id="ban-modal-username"></p>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <!-- Total cost display -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Total cost on account</span>
+        <span style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--red);" id="ban-modal-cost">$0.00</span>
+      </div>
+      <!-- Worker refund input -->
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Worker refund amount $</label>
+        <input type="number" id="ban-modal-refund" value="0" min="0" step="0.01" placeholder="0" style="width:100%;" oninput="banModalUpdateNet()">
+        <p style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;">Workers usually refund the derank / MMR cost — not the fresh acc price.</p>
+      </div>
+      <!-- Net loss breakdown box -->
+      <div style="padding:10px 12px;background:rgba(248,113,113,0.06);border-radius:var(--r);border:1px solid var(--red-border);">
+        <div id="ban-modal-breakdown" style="display:none;flex-direction:column;gap:4px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-family:'DM Mono',monospace;">
+            <span style="color:var(--muted);">Total cost</span>
+            <span id="ban-modal-cost-row" style="color:var(--text);"></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-family:'DM Mono',monospace;">
+            <span style="color:var(--muted);">Worker refund</span>
+            <span style="color:var(--green);" id="ban-modal-refund-display">-$0.00</span>
+          </div>
+          <div style="height:1px;background:var(--border);margin:2px 0;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Net loss recorded</span>
+          <span style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--red);" id="ban-modal-net">$0.00</span>
+        </div>
+      </div>
+      <!-- Buttons -->
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn-r" style="flex:2;" onclick="confirmBan()">🚫 Confirm Ban</button>
+        <button onclick="closeModal('modal-ban-account')" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Edit Sale Modal -->
 <div class="modal-bg" id="modal-edit-sale">
