@@ -376,22 +376,21 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     </div>
   </div>
   <div class="metrics-grid g2" style="margin-bottom:10px;">
-    <div class="metric"><p class="ml">Balance (USD)</p><p class="mv" id="b-usd">$0.00</p><p class="mv2" id="b-egp-sub">≈ LE 0</p></div>
+    <div class="metric"><p class="ml">Balance (USD)</p><p class="mv" id="b-usd">$0.00</p><p class="mv2" id="b-egp-sub">≈ E£ 0</p></div>
     <div class="metric"><p class="ml">Balance (E£)</p><p class="mv" id="b-egp">E£0</p><p class="mv2" id="b-usd-sub">≈ $0.00</p></div>
   </div>
-  <div class="metrics-grid g3">
-    <div class="metric"><p class="ml">Total funded</p><p class="mv mv-green" id="sp-funded">$0.00</p><p class="mv2" id="sp-funded-egp">≈ LE 0</p></div>
-    <div class="metric"><p class="ml">Total spent</p><p class="mv mv-red" id="sp-spent">$0.00</p><p class="mv2" id="sp-spent-egp">≈ LE 0</p></div>
-    <div class="metric"><p class="ml">Transactions</p><p class="mv" id="sp-count">0</p></div>
+  <div class="metrics-grid g4" style="margin-bottom:10px;">
+    <div class="metric"><p class="ml">💼 Business Spent (Month)</p><p class="mv mv-red" id="sp-business-spent">$0.00</p><p class="mv2" id="sp-business-spent-egp">≈ E£0</p></div>
+    <div class="metric"><p class="ml">🏠 Personal Spent (Month)</p><p class="mv mv-amber" id="sp-personal-spent">$0.00</p><p class="mv2" id="sp-personal-spent-egp">≈ E£0</p></div>
+    <div class="metric" style="border-color:rgba(74,222,128,0.2);"><p class="ml">📅 Monthly Sales Profit</p><div class="dual-val"><span class="dv-main mv-green" id="monthly-profit-spending">$0.00</span><span class="dv-sub" id="monthly-profit-spending-egp">≈ E£0</span></div></div>
+    <div class="metric" style="border-color:rgba(167,139,250,0.3);"><p class="ml">💎 Net Profit (after bans)</p><div class="dual-val"><span class="dv-main" id="net-metric-spending">$0.00</span><span class="dv-sub" id="net-metric-spending-egp">≈ E£0</span></div></div>
   </div>
-  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;">
-    <p class="ml">Net (Monthly Profit − Banned Losses)</p>
-    <div class="dual-val"><span class="dv-main" id="net-metric-spending">$0.00</span><span class="dv-sub" id="net-metric-spending-egp">≈ E£0</span></div>
-  </div>
-  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
-    <p class="ml">📅 This Month's Sales Profit</p>
-    <div class="dual-val"><span class="dv-main mv-green" id="monthly-profit-spending">$0.00</span><span class="dv-sub" id="monthly-profit-spending-egp">≈ E£0</span></div>
-  </div>
+  <!-- Hidden elements required for existing JS functions -->
+  <span id="sp-funded" style="display:none">$0.00</span>
+  <span id="sp-funded-egp" style="display:none">≈ E£0</span>
+  <span id="sp-spent" style="display:none">$0.00</span>
+  <span id="sp-spent-egp" style="display:none">≈ E£0</span>
+  <span id="sp-count" style="display:none">0</span>
   <div class="card">
     <p class="st">Add funds</p>
     <div class="row">
@@ -558,118 +557,154 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
 <!-- ═══ STOCK ═══ -->
 <div id="pane-stock" class="pane">
 
-  <!-- Net metric prominent at top -->
-  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:14px 16px;border-color:rgba(167,139,250,0.3);">
-    <p class="ml" style="margin-bottom:6px;">Net = Monthly Profit − Banned Losses</p>
-    <div class="dual-val"><span class="dv-main" id="sk-net">$0.00</span><span class="dv-sub" id="sk-net-egp">≈ E£0</span></div>
-  </div>
-  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:12px 14px;border-color:rgba(74,222,128,0.2);">
-    <p class="ml">📅 This Month's Sales Profit</p>
-    <div class="dual-val"><span class="dv-main mv-green" id="monthly-profit-stock">$0.00</span><span class="dv-sub" id="monthly-profit-stock-egp">≈ E£0</span></div>
+  <!-- Per-server fresh breakdown -->
+  <div class="card" style="margin-bottom:10px;padding:12px 16px;">
+    <p class="st" style="margin-bottom:8px;">🆕 Fresh Stock by Server</p>
+    <div class="metrics-grid g5" style="margin-bottom:0;">
+      <div class="metric" style="border-color:rgba(96,165,250,0.25);padding:10px 12px;">
+        <p class="ml" style="font-size:9px;">NA</p>
+        <p class="mv sk-fresh" id="sk-fresh-na">0</p>
+        <p class="mv2" id="sk-fresh-na-cost">$0.00</p>
+      </div>
+      <div class="metric" style="border-color:rgba(96,165,250,0.25);padding:10px 12px;">
+        <p class="ml" style="font-size:9px;">EUW</p>
+        <p class="mv sk-fresh" id="sk-fresh-euw">0</p>
+        <p class="mv2" id="sk-fresh-euw-cost">$0.00</p>
+      </div>
+      <div class="metric" style="border-color:rgba(96,165,250,0.25);padding:10px 12px;">
+        <p class="ml" style="font-size:9px;">EUNE</p>
+        <p class="mv sk-fresh" id="sk-fresh-eune">0</p>
+        <p class="mv2" id="sk-fresh-eune-cost">$0.00</p>
+      </div>
+      <div class="metric" style="border-color:rgba(96,165,250,0.25);padding:10px 12px;">
+        <p class="ml" style="font-size:9px;">OCE</p>
+        <p class="mv sk-fresh" id="sk-fresh-oce">0</p>
+        <p class="mv2" id="sk-fresh-oce-cost">$0.00</p>
+      </div>
+      <div class="metric" style="border-color:rgba(96,165,250,0.15);padding:10px 12px;">
+        <p class="ml" style="font-size:9px;">TOTAL FRESH</p>
+        <p class="mv sk-fresh" id="sk-c-fresh">0</p>
+        <p class="mv2" id="sk-v-fresh">$0.00</p>
+      </div>
+    </div>
   </div>
 
-  <!-- Capital breakdown -->
-  <div class="metrics-grid g4" style="margin-bottom:10px;">
-    <div class="metric">
-      <p class="ml">Capital (no profit)</p>
+  <!-- Summary metrics -->
+  <div class="metrics-grid g5" style="margin-bottom:10px;">
+    <div class="metric" style="border-color:rgba(74,222,128,0.25);">
+      <p class="ml">📋 Listed Accounts</p>
+      <p class="mv sk-done" id="sk-c-done">0</p>
+      <p class="mv2" id="sk-v-done">$0.00 cost</p>
+    </div>
+    <div class="metric" style="border-color:rgba(248,113,113,0.2);">
+      <p class="ml">💰 Total Active Cost</p>
       <p class="mv mv-red" id="sk-capital">$0.00</p>
       <p class="mv2" id="sk-capital-egp">≈ E£0</p>
     </div>
-    <div class="metric">
-      <p class="ml">Capital (with profit)</p>
-      <p class="mv mv-green" id="sk-capital-profit">$0.00</p>
-      <p class="mv2" id="sk-capital-profit-egp">≈ E£0</p>
-    </div>
-    <div class="metric" style="border-color:rgba(74,222,128,0.2);">
-      <p class="ml">✅ Done Profit</p>
-      <p class="mv sk-done" id="sk-profit">$0.00</p>
-      <p class="mv2" id="sk-profit-egp">≈ E£0</p>
-    </div>
-    <div class="metric" style="border-color:rgba(248,113,113,0.2);">
+    <div class="metric" style="border-color:rgba(248,113,113,0.35);">
       <p class="ml">🚫 Banned Loss</p>
-      <p class="mv sk-banned" id="sk-banned-loss">$0.00</p>
-      <p class="mv2" id="sk-banned-loss-egp">≈ E£0</p>
-    </div>
-  </div>
-
-  <!-- Status breakdown: fresh and done only -->
-  <div class="metrics-grid g2" style="margin-bottom:10px;">
-    <div class="metric" style="border-color:rgba(96,165,250,0.2);">
-      <p class="ml">🆕 Fresh Accounts</p>
-      <p class="mv sk-fresh" id="sk-c-fresh">0</p>
-      <p class="mv2" id="sk-v-fresh">$0.00 cost</p>
+      <p class="mv sk-banned" id="sk-banned-display">$0.00</p>
+      <p class="mv2" id="sk-banned-display-egp">≈ E£0</p>
     </div>
     <div class="metric" style="border-color:rgba(74,222,128,0.2);">
-      <p class="ml">✅ Done & Listed</p>
-      <p class="mv sk-done" id="sk-c-done">0</p>
-      <p class="mv2" id="sk-v-done">$0.00 profit</p>
+      <p class="ml">📅 Monthly Sales Profit</p>
+      <div class="dual-val"><span class="dv-main mv-green" id="monthly-profit-stock">$0.00</span><span class="dv-sub" id="monthly-profit-stock-egp">≈ E£0</span></div>
+    </div>
+    <div class="metric" style="border-color:rgba(167,139,250,0.3);">
+      <p class="ml">💎 Net (after bans)</p>
+      <div class="dual-val"><span class="dv-main" id="sk-net">$0.00</span><span class="dv-sub" id="sk-net-egp">≈ E£0</span></div>
     </div>
   </div>
+  <!-- Hidden compat elements -->
+  <span id="sk-capital-profit" style="display:none">$0.00</span><span id="sk-capital-profit-egp" style="display:none">≈ E£0</span>
+  <span id="sk-profit" style="display:none">$0.00</span><span id="sk-profit-egp" style="display:none">≈ E£0</span>
+  <span id="sk-banned-loss" style="display:none">$0.00</span><span id="sk-banned-loss-egp" style="display:none">≈ E£0</span>
 
-  <!-- Defaults -->
+  <!-- Add Fresh Accounts -->
   <div class="card" style="margin-bottom:10px;">
-    <p class="st">Default Prices</p>
-    <div class="row">
-      <span style="font-size:12px;color:var(--muted);">Buy $</span>
-      <input type="number" id="sk-def-buy" placeholder="e.g. 5.00" style="width:90px;" min="0" step="0.01" oninput="saveStockDef()">
-      <span style="font-size:12px;color:var(--muted);">Sell $</span>
-      <input type="number" id="sk-def-sell" placeholder="e.g. 15.00" style="width:90px;" min="0" step="0.01" oninput="saveStockDef()">
-      <span style="font-size:12px;color:var(--muted);">Salary $</span>
-      <input type="number" id="sk-def-salary" placeholder="e.g. 2.00" style="width:90px;" min="0" step="0.01" oninput="saveStockDef()">
-    </div>
-    <p class="hint-text">Leave any field empty when adding to use these defaults.</p>
-  </div>
-
-  <!-- Add accounts -->
-  <div class="card" style="margin-bottom:10px;">
-    <p class="st">Add Account(s)</p>
-    <div class="row">
-      <input type="text" id="sk-add-name" placeholder="Account name / ID" style="flex:1;min-width:130px;">
-      <select id="sk-add-status" style="width:105px;">
-        <option value="fresh">🆕 Fresh</option>
-        <option value="done">✅ Done</option>
+    <p class="st">➕ Add Fresh Accounts</p>
+    <div class="row" style="flex-wrap:wrap;">
+      <input type="text" id="sk-add-username" placeholder="Username" style="width:120px;">
+      <select id="sk-add-server" style="width:82px;">
+        <option value="NA">NA</option><option value="EUW">EUW</option><option value="EUNE">EUNE</option><option value="OCE">OCE</option><option value="Other">Other</option>
       </select>
-      <input type="number" id="sk-add-buy" placeholder="Buy $" style="width:82px;" min="0" step="0.01">
-      <input type="number" id="sk-add-sell" placeholder="Sell $" style="width:82px;" min="0" step="0.01">
-      <input type="number" id="sk-add-salary" placeholder="Salary $" style="width:82px;" min="0" step="0.01">
-      <input type="text" id="sk-add-note" placeholder="Note" style="width:110px;">
+      <select id="sk-add-level-method" style="width:100px;">
+        <option value="By Bot">By Bot</option><option value="By Hand">By Hand</option>
+      </select>
+      <input type="number" id="sk-add-costed" placeholder="Cost $" style="width:80px;" min="0" step="0.01">
+      <input type="text" id="sk-add-info" placeholder="Note" style="width:130px;">
       <div style="display:flex;align-items:center;gap:4px;">
         <span style="font-size:12px;color:var(--muted);">×</span>
         <input type="number" id="sk-add-qty" value="1" min="1" style="width:50px;">
       </div>
-      <button class="btn-g" onclick="addStockAccounts()">+ Add</button>
+      <button class="btn-g" onclick="addStockAccounts()">+ Add Fresh</button>
     </div>
-    <div class="warn" id="sk-warn">Please enter an account name.</div>
+    <div class="warn" id="sk-warn">Please enter a username.</div>
+  </div>
+
+  <!-- Add Listed Accounts — Paste OR CSV -->
+  <div class="card" style="margin-bottom:10px;">
+    <p class="st">📋 Add Listed Account</p>
+    <p class="hint-text" style="margin-bottom:10px;">Option 1: Copy a row from your Airtable/sheet and paste it below (tab-separated, supports multiple rows). &nbsp;|&nbsp; Option 2: Import a full CSV file.</p>
+    <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+      <textarea id="sk-paste-input" placeholder="Paste row(s) here...&#10;e.g. Arielianita&#9;rrunTimeTerrorr!@#Mo&#9;Arielianita#9221&#9;s9p9rEzIx99F&#9;&#9;By Bot&#9;NA&#9;Done&#9;&#9;Iron IV 0LP..." style="flex:1;min-width:300px;height:70px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:vertical;outline:none;" oninput="previewPaste()"></textarea>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="btn-g" style="white-space:nowrap;" onclick="addFromPaste()">+ Add from Paste</button>
+        <button class="btn-sm" onclick="clearPaste()">Clear</button>
+        <input type="file" id="sk-csv-input" accept=".csv" style="display:none;" onchange="importStockCSV(event)">
+        <button class="btn-blue btn-sm" style="white-space:nowrap;" onclick="document.getElementById('sk-csv-input').click()">📥 Import CSV</button>
+      </div>
+    </div>
+    <div id="sk-paste-preview" style="display:none;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:var(--r);font-family:'DM Mono',monospace;font-size:11px;border:1px solid var(--border2);"></div>
+    <div class="warn" id="sk-paste-warn">Could not parse row. Make sure it's tab-separated from Airtable/sheets.</div>
   </div>
 
   <!-- Table -->
   <div class="card">
     <div class="log-header">
-      <p class="st" style="margin:0;">Accounts</p>
+      <p class="st" style="margin:0;">Account Inventory</p>
       <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
         <select id="sk-filter" onchange="renderStock()" style="height:28px;font-size:12px;">
           <option value="all">All</option>
           <option value="fresh">🆕 Fresh</option>
-          <option value="done">✅ Done</option>
+          <option value="listed">📋 Listed</option>
+          <option value="sold">✅ Sold</option>
           <option value="banned">🚫 Banned</option>
         </select>
-        <input type="search" id="sk-search" placeholder="Search..." style="height:28px;font-size:12px;width:140px;" oninput="renderStock()">
+        <select id="sk-filter-server" onchange="renderStock()" style="height:28px;font-size:12px;">
+          <option value="all">All Servers</option>
+          <option value="NA">NA</option>
+          <option value="EUW">EUW</option>
+          <option value="EUNE">EUNE</option>
+          <option value="OCE">OCE</option>
+        </select>
+        <input type="search" id="sk-search" placeholder="Search username / ref / rank..." style="height:28px;font-size:12px;width:200px;" oninput="renderStock()">
+        <span id="sk-results-count" style="font-size:11px;color:var(--amber);font-family:'DM Mono',monospace;"></span>
       </div>
     </div>
     <div class="table-wrap">
-      <table>
+      <table id="sk-table" style="table-layout:auto;font-size:11px;">
         <thead><tr>
-          <th style="width:68px;">Date</th>
-          <th>Account</th>
-          <th style="width:100px;">Status</th>
-          <th style="width:78px;">Buy $</th>
-          <th style="width:78px;">Sell $</th>
-          <th style="width:78px;">Salary $</th>
-          <th style="width:78px;">Net</th>
-          <th style="width:95px;">Note</th>
-          <th style="width:44px;"></th>
+          <th style="min-width:90px;">Username</th>
+          <th style="min-width:120px;">ID</th>
+          <th style="min-width:70px;">Method</th>
+          <th style="min-width:55px;">Server</th>
+          <th style="min-width:80px;">Assigned</th>
+          <th style="min-width:120px;">Rank</th>
+          <th style="min-width:55px;">Champs</th>
+          <th style="min-width:55px;">BE</th>
+          <th style="min-width:60px;">W/L</th>
+          <th style="min-width:55px;">WR%</th>
+          <th style="min-width:40px;">LVL</th>
+          <th style="min-width:55px;">💰 Paid</th>
+          <th style="min-width:55px;">📋 Listed</th>
+          <th style="min-width:80px;">Listed On</th>
+          <th style="min-width:80px;">REF</th>
+          <th style="min-width:70px;">Cost $</th>
+          <th style="min-width:100px;">Status</th>
+          <th style="min-width:80px;">Actions</th>
         </tr></thead>
-        <tbody id="sk-body"><tr><td colspan="9" class="empty-state">No accounts yet</td></tr></tbody>
+        <tbody id="sk-body"><tr><td colspan="21" class="empty-state">Loading accounts...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1147,7 +1182,150 @@ function addSale() {
   document.getElementById('s-price').value='';
   document.getElementById('s-cost').value='';
   document.getElementById('s-profit-input').value='';
+
+  // Auto-remove from stock if REF matches a listed account
+  if(ref) {
+    const idx = stock.findIndex(a =>
+      a.ref && a.ref.trim().toLowerCase() === ref.toLowerCase() &&
+      (a.status === 'listed' || a.status === 'fresh')
+    );
+    if(idx !== -1) {
+      const acc = stock[idx];
+      stock.splice(idx, 1);
+      // Show brief confirmation
+      const banner = document.createElement('div');
+      banner.textContent = '✅ Removed "'+acc.username+'" from stock (REF: '+ref+')';
+      banner.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1a2a1a;border:1px solid var(--green);color:var(--green);padding:10px 16px;border-radius:8px;font-size:12px;font-family:"DM Mono",monospace;z-index:9999;';
+      document.body.appendChild(banner);
+      setTimeout(()=>banner.remove(), 3500);
+      syncStockSilent();
+    }
+  }
   pushData();
+}
+
+// ─── PASTE PARSER FOR LISTED ACCOUNTS ────────────
+// Parses a tab-separated row copied from Airtable/Google Sheets
+// Column order: username, password(skip), ID, Old PW(skip), Selling Price, Level Method, Server, Status,
+//   Assigned to, Rank, Prev S rank, Price, Champs, BE, W/L, Win rate, LVL, Loot Pic,
+//   Worker Payment, Listing status, Listed on, REF, INFO, Costed, Sold, Site
+function parsePastedRow(text) {
+  // Split by tabs
+  const cols = text.split('\t').map(c => c.trim());
+  if(cols.length < 3) return null;
+
+  const g = (i, def='') => (cols[i] !== undefined ? cols[i] : def);
+
+  // Parse cost - extract leading number from strings like "18 $ (8 botted...)"
+  function parseCost(raw) {
+    if(!raw) return 0;
+    const m = String(raw).match(/^(\d+(?:\.\d+)?)\s*\$?/);
+    return m ? parseFloat(m[1]) : 0;
+  }
+
+  // Detect if a cell is a "checked" boolean
+  function isBool(v) { return v.toLowerCase()==='checked'||v==='1'||v==='true'; }
+
+  // Strip image URLs from loot pic column - just skip it
+  // Figure out column layout:
+  // If col[18] or col[19] has "checked" — it's the full Airtable export format
+  // username=0, pw=1, ID=2, oldpw=3, sell_price=4, method=5, server=6, status=7,
+  // assigned=8, rank=9, prev_rank=10, price=11, champs=12, be=13, wl=14, wr=15,
+  // lvl=16, loot_pic=17, worker_payment=18, listing_status=19, listed_on=20, ref=21, info=22, costed=23
+
+  const username   = g(0);
+  // col 1 = password (skipped — not stored)
+  const acct_id    = g(2);
+  // col 3 = old_pw (skipped — not stored)
+  // col 4 = selling price (skip)
+  const level_method = g(5);
+  const server     = g(6);
+  // col 7 = status (Done/Fresh etc)
+  const assigned_to = g(8);
+  const rank       = g(9);
+  // col 10 = prev rank (skip)
+  // col 11 = price display (skip)
+  const champs     = g(12);
+  const be         = g(13);
+  const wl         = g(14);
+  const winrate    = g(15);
+  const lvl        = g(16);
+  // col 17 = loot pic URLs (skip)
+  const worker_payment  = isBool(g(18));
+  const listing_status  = isBool(g(19));
+  const listed_on  = g(20);
+  const ref        = g(21);
+  const info       = g(22);
+  const costed     = parseCost(g(23));
+
+  if(!username) return null;
+
+  return { username, acct_id, level_method, server,
+    assigned_to, rank, champs, be, wl, winrate, lvl,
+    worker_payment, listing_status, listed_on, ref, info, costed,
+    status: 'listed' };
+}
+
+function previewPaste() {
+  const raw = document.getElementById('sk-paste-input').value.trim();
+  const preview = document.getElementById('sk-paste-preview');
+  const warn = document.getElementById('sk-paste-warn');
+  warn.style.display='none';
+  if(!raw){ preview.style.display='none'; return; }
+  const parsed = parsePastedRow(raw);
+  if(!parsed){ preview.style.display='none'; return; }
+  preview.style.display='block';
+  preview.innerHTML =
+    '<span style="color:var(--green);">✓ Detected: </span>' +
+    '<b>'+parsed.username+'</b> · ' +
+    (parsed.server||'?')+' · '+
+    (parsed.rank||'—')+' · ' +
+    'Cost: <span style="color:var(--red);">$'+parsed.costed.toFixed(2)+'</span> · ' +
+    'REF: <span style="color:var(--amber);">'+(parsed.ref||'—')+'</span> · ' +
+    'Listed on: '+(parsed.listed_on||'—');
+}
+
+function addFromPaste() {
+  const raw = document.getElementById('sk-paste-input').value.trim();
+  const warn = document.getElementById('sk-paste-warn');
+  warn.style.display='none';
+  if(!raw) return;
+  // Handle multiple lines (paste multiple rows at once)
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  let added = 0;
+  lines.forEach(line => {
+    const parsed = parsePastedRow(line);
+    if(!parsed) return;
+    // Check for duplicate REF
+    if(parsed.ref && stock.some(a=>a.ref && a.ref.trim()===parsed.ref.trim() && a.status==='listed')) {
+      return; // skip duplicate
+    }
+    stock.push({
+      id: 'paste_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+added,
+      ...parsed
+    });
+    added++;
+  });
+  if(!added) {
+    warn.style.display='block';
+    setTimeout(()=>warn.style.display='none',3000);
+    return;
+  }
+  document.getElementById('sk-paste-input').value='';
+  document.getElementById('sk-paste-preview').style.display='none';
+  saveLocal(); renderStock(); syncStockSilent();
+  // Show brief success
+  const banner = document.createElement('div');
+  banner.textContent = '✅ Added '+added+' account'+(added>1?'s':'')+' to Listed';
+  banner.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1a2a1a;border:1px solid var(--green);color:var(--green);padding:10px 16px;border-radius:8px;font-size:12px;font-family:"DM Mono",monospace;z-index:9999;';
+  document.body.appendChild(banner);
+  setTimeout(()=>banner.remove(), 3000);
+}
+
+function clearPaste() {
+  document.getElementById('sk-paste-input').value='';
+  document.getElementById('sk-paste-preview').style.display='none';
+  document.getElementById('sk-paste-warn').style.display='none';
 }
 
 function renderSalesStats() {
@@ -1268,22 +1446,40 @@ function renderSpendStats() {
   const list = filterByMonth(spending, mk);
   const bal = getBalanceUSD();
   const balEGP = bal * EGP();
-  const funded = getTotalFundedUSD(list);
-  const spent = getTotalSpentUSD(list);
-  // Sum E£ using each transaction's original amount (no rate drift)
-  const fundedEGP = list.filter(t=>t.type==='fund').reduce((s,t)=>s+txEGP(t),0);
-  const spentEGP  = list.filter(t=>t.type==='spend').reduce((s,t)=>s+txEGP(t),0);
   const uE = document.getElementById('b-usd');
   const eE = document.getElementById('b-egp');
   uE.textContent = fmtUSD(bal); uE.className = 'mv '+(bal<0?'mv-red':'mv-green');
   eE.textContent = fmtEGP(balEGP); eE.className = 'mv '+(bal<0?'mv-red':'mv-green');
   document.getElementById('b-egp-sub').textContent = '≈ '+fmtEGP(balEGP);
   document.getElementById('b-usd-sub').textContent = '≈ '+fmtUSD(bal);
-  document.getElementById('sp-funded').textContent = fmtUSD(funded);
-  document.getElementById('sp-funded-egp').textContent = '≈ '+fmtEGP(fundedEGP);
-  document.getElementById('sp-spent').textContent = fmtUSD(spent);
-  document.getElementById('sp-spent-egp').textContent = '≈ '+fmtEGP(spentEGP);
-  document.getElementById('sp-count').textContent = list.length;
+
+  // Business vs Personal breakdown for THIS MONTH
+  const spends = list.filter(t=>t.type==='spend');
+  let bizUSD=0, bizEGP=0, persUSD=0, persEGP=0;
+  spends.forEach(t=>{
+    const g = CAT_GROUPS[t.cat];
+    if(g==='business')      { bizUSD+=t.amtUSD;  bizEGP+=txEGP(t); }
+    else if(g==='personal') { persUSD+=t.amtUSD; persEGP+=txEGP(t); }
+  });
+
+  const biz  = document.getElementById('sp-business-spent');
+  const bizE = document.getElementById('sp-business-spent-egp');
+  const per  = document.getElementById('sp-personal-spent');
+  const perE = document.getElementById('sp-personal-spent-egp');
+  if(biz)  biz.textContent  = fmtUSD(bizUSD);
+  if(bizE) bizE.textContent = '≈ '+fmtEGP(bizEGP);
+  if(per)  per.textContent  = fmtUSD(persUSD);
+  if(perE) perE.textContent = '≈ '+fmtEGP(persEGP);
+
+  // Hidden compat spans
+  const funded = getTotalFundedUSD(list);
+  const spent  = getTotalSpentUSD(list);
+  const fundedEGP = list.filter(t=>t.type==='fund').reduce((s,t)=>s+txEGP(t),0);
+  const spentEGP  = list.filter(t=>t.type==='spend').reduce((s,t)=>s+txEGP(t),0);
+  const spFunded = document.getElementById('sp-funded');
+  const spSpent  = document.getElementById('sp-spent');
+  if(spFunded) spFunded.textContent = fmtUSD(funded);
+  if(spSpent)  spSpent.textContent  = fmtUSD(spent);
 }
 
 function renderSpending() {
@@ -1713,45 +1909,62 @@ function renderWallets() {
   document.getElementById('wt-egp').textContent = fmtEGP(totalUSD * EGP());
 }
 
-// ─── STOCK ────────────────────────────────────────
+// ─── STOCK (ACCOUNT INVENTORY) ───────────────────
+// New data model: each account has all the fields from your spreadsheet
+// status: 'fresh' | 'listed' | 'sold' | 'banned'
+
 function stockToRows(arr) {
-  const rows=[['id','date','name','status','buyPrice','sellPrice','salary','note']];
-  arr.forEach(a=>rows.push([a.id,a.date,a.name,a.status,a.buyPrice,a.sellPrice,a.salary,a.note||'']));
+  const rows=[['id','username','acct_id','level_method','server',
+    'assigned_to','rank','champs','be','wl','winrate','lvl',
+    'worker_payment','listing_status','listed_on','ref','info','costed','status']];
+  arr.forEach(a=>rows.push([
+    a.id, a.username||'', a.acct_id||'',
+    a.level_method||'', a.server||'', a.assigned_to||'', a.rank||'',
+    a.champs||'', a.be||'', a.wl||'', a.winrate||'', a.lvl||'',
+    a.worker_payment?'1':'0', a.listing_status?'1':'0',
+    a.listed_on||'', a.ref||'', a.info||'',
+    a.costed||0, a.status||'fresh'
+  ]));
   return rows;
 }
+
 function rowsToStock(rows) {
   if(!rows||rows.length<2) return [];
   return rows.slice(1).filter(r=>r[0]).map(r=>({
-    id:String(r[0]), date:sanitizeDate(r[1]), name:String(r[2]||''),
-    status:String(r[3]||'fresh'), buyPrice:parseFloat(r[4])||0,
-    sellPrice:parseFloat(r[5])||0, salary:parseFloat(r[6])||0, note:String(r[7]||'')
+    id: String(r[0]),
+    username: String(r[1]||''),
+    acct_id: String(r[2]||''),
+    level_method: String(r[3]||''),
+    server: String(r[4]||''),
+    assigned_to: String(r[5]||''),
+    rank: String(r[6]||''),
+    champs: String(r[7]||''),
+    be: String(r[8]||''),
+    wl: String(r[9]||''),
+    winrate: String(r[10]||''),
+    lvl: String(r[11]||''),
+    worker_payment: String(r[12]||'0')==='1',
+    listing_status: String(r[13]||'0')==='1',
+    listed_on: String(r[14]||''),
+    ref: String(r[15]||''),
+    info: String(r[16]||''),
+    costed: parseFloat(r[17])||0,
+    status: String(r[18]||'fresh')
   }));
 }
-function saveStockDef() {
-  try { localStorage.setItem('mh_skdef', JSON.stringify({
-    buy:document.getElementById('sk-def-buy').value,
-    sell:document.getElementById('sk-def-sell').value,
-    salary:document.getElementById('sk-def-salary').value
-  })); } catch(e) {}
-}
-function loadStockDef() {
-  try {
-    const d=JSON.parse(localStorage.getItem('mh_skdef')||'{}');
-    if(d.buy)    document.getElementById('sk-def-buy').value=d.buy;
-    if(d.sell)   document.getElementById('sk-def-sell').value=d.sell;
-    if(d.salary) document.getElementById('sk-def-salary').value=d.salary;
-  } catch(e) {}
-}
-function skDef(f) {
-  return parseFloat(document.getElementById({buy:'sk-def-buy',sell:'sk-def-sell',salary:'sk-def-salary'}[f]).value)||0;
-}
+
+// Keep old stub functions that rerender() calls — they now just call new functions
+function saveStockDef() {}
+function loadStockDef() {}
+function skDef(f) { return 0; }
+
 function calcNet() {
-  // Net = This month's sales profit − banned account losses
   const mk = getVM('s-month-view');
   const monthlyProfit = filterByMonth(sales, mk).reduce((s,t)=>s+t.profit, 0);
-  const bannedLoss    = stock.filter(a=>a.status==='banned').reduce((s,a)=>s+a.buyPrice, 0);
+  const bannedLoss = stock.filter(a=>a.status==='banned').reduce((s,a)=>s+a.costed, 0);
   return monthlyProfit - bannedLoss;
 }
+
 function updateNetMetric() {
   const net = calcNet();
   const cls = net>=0 ? 'mv-green' : 'mv-red';
@@ -1766,114 +1979,314 @@ function updateNetMetric() {
     if(el) el.textContent='≈ '+fmtEGP(net*EGP());
   });
 }
+
 function addStockAccounts() {
-  const name=document.getElementById('sk-add-name').value.trim();
-  const warn=document.getElementById('sk-warn');
-  if(!name){warn.style.display='block';setTimeout(()=>warn.style.display='none',2500);return;}
+  const username = document.getElementById('sk-add-username').value.trim();
+  const warn = document.getElementById('sk-warn');
+  if(!username){ warn.style.display='block'; setTimeout(()=>warn.style.display='none',2500); return; }
   warn.style.display='none';
-  const status=document.getElementById('sk-add-status').value;
-  const buyRaw=document.getElementById('sk-add-buy').value;
-  const sellRaw=document.getElementById('sk-add-sell').value;
-  const salRaw=document.getElementById('sk-add-salary').value;
-  const note=document.getElementById('sk-add-note').value.trim();
-  const qty=Math.max(1,parseInt(document.getElementById('sk-add-qty').value)||1);
-  const buy   =buyRaw !==''?parseFloat(buyRaw) :skDef('buy');
-  const sell  =sellRaw!==''?parseFloat(sellRaw):skDef('sell');
-  const salary=salRaw !==''?parseFloat(salRaw) :skDef('salary');
+  const qty = Math.max(1, parseInt(document.getElementById('sk-add-qty').value)||1);
+  const base = {
+    acct_id: '',
+    level_method: document.getElementById('sk-add-level-method').value,
+    server: document.getElementById('sk-add-server').value,
+    assigned_to: '',
+    rank: '', champs: '', be: '', wl: '', winrate: '', lvl: '',
+    worker_payment: false, listing_status: false, listed_on: '',
+    ref: '',
+    info: document.getElementById('sk-add-info').value.trim(),
+    costed: parseFloat(document.getElementById('sk-add-costed').value)||0,
+    status: 'fresh'
+  };
   for(let i=0;i<qty;i++){
     stock.push({
-      id:Date.now()+'_'+Math.random().toString(36).slice(2,7),
-      date:today(), name:qty>1?name+' #'+(i+1):name,
-      status, buyPrice:buy, sellPrice:sell, salary, note
+      id: Date.now()+'_'+Math.random().toString(36).slice(2,7),
+      username: qty>1 ? username+' #'+(i+1) : username,
+      ...base
     });
   }
-  ['sk-add-name','sk-add-buy','sk-add-sell','sk-add-salary','sk-add-note'].forEach(id=>document.getElementById(id).value='');
+  ['sk-add-username','sk-add-costed','sk-add-info'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('sk-add-qty').value='1';
-  pushData();
+  saveLocal(); renderStock(); syncStockSilent();
 }
-function updateStock(id,field,value) {
-  const acc=stock.find(a=>a.id===id);
+
+function updateStock(id, field, value) {
+  const acc = stock.find(a=>a.id===id);
   if(!acc) return;
-  if(field==='status'&&value==='banned'){
-    acc.status='banned'; acc.salary=0; // team refunds salary on ban
+  if(field==='worker_payment'||field==='listing_status') {
+    acc[field] = value===true||value==='true'||value===1;
+  } else if(field==='costed') {
+    acc[field] = parseFloat(value)||0;
+  } else if(field==='status' && value==='banned') {
+    acc.status='banned';
   } else {
-    acc[field]=['buyPrice','sellPrice','salary'].includes(field)?(parseFloat(value)||0):value;
+    acc[field] = value;
   }
-  renderStock();
-  pushData();
+  saveLocal(); renderStockStats(); syncStockSilent();
 }
+
+function markSold(id) {
+  const acc = stock.find(a=>a.id===id);
+  if(!acc) return;
+  if(!confirm('Mark "'+acc.username+'" as SOLD and remove from active stock?')) return;
+  acc.status = 'sold';
+  saveLocal(); renderStock(); syncStockSilent();
+}
+
 function deleteStock(id) {
-  if(!confirm('Delete this account?')) return;
-  stock=stock.filter(a=>a.id!==id);
-  pushData();
+  if(!confirm('Permanently delete this account? This cannot be undone.')) return;
+  stock = stock.filter(a=>a.id!==id);
+  saveLocal(); renderStock(); syncStockSilent();
 }
+
+function markBanned(id) {
+  const acc = stock.find(a=>a.id===id);
+  if(!acc) return;
+  const totalCost = acc.costed||0;
+
+  // Ask what the worker is refunding (derank/MMR cost)
+  const refundStr = prompt(
+    '🚫 Banning: "' + acc.username + '"\n\n' +
+    'Total cost on this account: $' + totalCost.toFixed(2) + '\n\n' +
+    'How much is your worker refunding back to you?\n' +
+    '(Enter 0 if nothing is refunded)\n\n' +
+    'Tip: Workers usually refund the derank or MMR cost, not the fresh acc price.',
+    '0'
+  );
+  if(refundStr === null) return; // user cancelled
+
+  const refund = parseFloat(refundStr) || 0;
+  const netLoss = Math.max(0, totalCost - refund);
+
+  if(!confirm(
+    'Confirm ban for "' + acc.username + '"?\n\n' +
+    'Total cost:      $' + totalCost.toFixed(2) + '\n' +
+    'Worker refund:  -$' + refund.toFixed(2) + '\n' +
+    '─────────────────────\n' +
+    'Net loss:        $' + netLoss.toFixed(2)
+  )) return;
+
+  acc.status = 'banned';
+  acc.costed = netLoss;  // store the actual net loss after refund
+  acc.ban_refund = refund;  // record refund for reference
+  saveLocal(); renderStock(); syncStockSilent();
+
+  // Toast
+  const banner = document.createElement('div');
+  banner.innerHTML = '🚫 Banned: <b>' + acc.username + '</b>' +
+    (refund > 0 ? ' — Worker refunded $' + refund.toFixed(2) + '.' : '') +
+    ' Net loss: <b style="color:var(--red);">$' + netLoss.toFixed(2) + '</b>';
+  banner.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1a0e0e;border:1px solid var(--red-border);color:var(--red);padding:10px 16px;border-radius:8px;font-size:12px;font-family:"DM Mono",monospace;z-index:9999;max-width:340px;line-height:1.5;';
+  document.body.appendChild(banner);
+  setTimeout(()=>banner.remove(), 5000);
+}
+
+async function syncStockSilent() {
+  try {
+    await sheetWrite('stock', stockToRows(stock));
+  } catch(e) { /* silent */ }
+}
+
 function renderStockStats() {
-  const fresh =stock.filter(a=>a.status==='fresh');
-  const done  =stock.filter(a=>a.status==='done');
-  const banned=stock.filter(a=>a.status==='banned');
-  const doneProfit =done.reduce((s,a)=>s+(a.sellPrice-a.buyPrice-a.salary),0);
-  const bannedLoss =banned.reduce((s,a)=>s+a.buyPrice,0);
-  const net        =doneProfit-bannedLoss;
-  const allBuy     =stock.reduce((s,a)=>s+a.buyPrice,0);
-  const allSalaries=done.reduce((s,a)=>s+a.salary,0);
-  const capitalRaw =(allBuy+allSalaries)-bannedLoss;
-  const capitalFull=capitalRaw+doneProfit;
+  const fresh  = stock.filter(a=>a.status==='fresh');
+  const listed = stock.filter(a=>a.status==='listed');
+  const banned = stock.filter(a=>a.status==='banned');
+  const totalCost = stock.filter(a=>a.status!=='sold').reduce((s,a)=>s+a.costed,0);
+  const bannedLoss = banned.reduce((s,a)=>s+a.costed, 0);
+
+  // Per-server fresh breakdown
+  const servers = ['na','euw','eune','oce'];
+  servers.forEach(sv => {
+    const svUpper = sv.toUpperCase();
+    const svAcc = fresh.filter(a=>(a.server||'').toUpperCase()===svUpper);
+    const el   = document.getElementById('sk-fresh-'+sv);
+    const elC  = document.getElementById('sk-fresh-'+sv+'-cost');
+    if(el)  el.textContent  = svAcc.length;
+    if(elC) elC.textContent = '$'+(svAcc.reduce((s,a)=>s+a.costed,0).toFixed(2));
+  });
+
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set('sk-net',        fmtUSD(net));
-  set('sk-net-egp',    '≈ '+fmtEGP(net*EGP()));
-  // color net
-  const nel=document.getElementById('sk-net');
-  if(nel) nel.className='dv-main '+(net>=0?'mv-green':'mv-red');
-  set('sk-capital',            fmtUSD(capitalRaw));
-  set('sk-capital-egp',        '≈ '+fmtEGP(capitalRaw*EGP()));
-  set('sk-capital-profit',     fmtUSD(capitalFull));
-  set('sk-capital-profit-egp', '≈ '+fmtEGP(capitalFull*EGP()));
-  set('sk-profit',             fmtUSD(doneProfit));
-  set('sk-profit-egp',         '≈ '+fmtEGP(doneProfit*EGP()));
-  set('sk-banned-loss',        fmtUSD(bannedLoss));
-  set('sk-banned-loss-egp',    '≈ '+fmtEGP(bannedLoss*EGP()));
-  set('sk-c-fresh',  fresh.length);
-  set('sk-v-fresh',  fmtUSD(fresh.reduce((s,a)=>s+a.buyPrice,0))+' cost');
-  set('sk-c-done',   done.length);
-  set('sk-v-done',   fmtUSD(doneProfit)+' profit');
-  // update net on all tabs
+  set('sk-c-fresh', fresh.length);
+  set('sk-v-fresh', '$'+fresh.reduce((s,a)=>s+a.costed,0).toFixed(2)+' cost');
+  set('sk-c-done',  listed.length);
+  set('sk-v-done',  '$'+listed.reduce((s,a)=>s+a.costed,0).toFixed(2)+' cost');
+  set('sk-capital', fmtUSD(totalCost));
+  set('sk-capital-egp', '≈ '+fmtEGP(totalCost*EGP()));
+
+  // Banned loss — visible metric
+  set('sk-banned-display', fmtUSD(bannedLoss));
+  set('sk-banned-display-egp', '≈ '+fmtEGP(bannedLoss*EGP()));
+  // hidden compat spans
+  set('sk-banned-loss', fmtUSD(bannedLoss));
+  set('sk-banned-loss-egp', '≈ '+fmtEGP(bannedLoss*EGP()));
+
+  // Banned count badge in filter dropdown label — update filter option text
+  const filterEl = document.getElementById('sk-filter');
+  if(filterEl) {
+    [...filterEl.options].forEach(opt => {
+      if(opt.value==='banned') opt.text = '🚫 Banned'+(banned.length?' ('+banned.length+')':'');
+    });
+  }
+
   updateNetMetric();
 }
+
 function renderStock() {
   renderStockStats();
-  const body=document.getElementById('sk-body');
+  const body = document.getElementById('sk-body');
   if(!body) return;
-  const fStatus=document.getElementById('sk-filter').value;
-  const query=document.getElementById('sk-search').value.trim().toLowerCase();
-  let list=[...stock].reverse();
-  if(fStatus!=='all') list=list.filter(a=>a.status===fStatus);
-  if(query) list=list.filter(a=>a.name.toLowerCase().includes(query)||(a.note||'').toLowerCase().includes(query));
+  const fStatus  = document.getElementById('sk-filter').value;
+  const fServer  = document.getElementById('sk-filter-server').value;
+  const query    = document.getElementById('sk-search').value.trim().toLowerCase();
+  let list = [...stock];
+  if(fStatus!=='all') list = list.filter(a=>a.status===fStatus);
+  if(fServer!=='all') list = list.filter(a=>a.server===fServer);
+  if(query) list = list.filter(a=>
+    (a.username||'').toLowerCase().includes(query)||
+    (a.ref||'').toLowerCase().includes(query)||
+    (a.rank||'').toLowerCase().includes(query)||
+    (a.acct_id||'').toLowerCase().includes(query)||
+    (a.assigned_to||'').toLowerCase().includes(query)
+  );
+
+  const cnt = document.getElementById('sk-results-count');
+  if(cnt) cnt.textContent = query||fStatus!=='all'||fServer!=='all'
+    ? list.length+' result'+(list.length!==1?'s':'')
+    : stock.filter(a=>a.status!=='sold').length+' active';
+
   if(!list.length){
-    body.innerHTML='<tr><td colspan="9" class="empty-state">'+(query?'No results for "'+query+'"':'No accounts yet')+'</td></tr>';
+    body.innerHTML='<tr><td colspan="21" class="empty-state">'+(query?'No results for "'+query+'"':'No accounts with this filter')+'</td></tr>';
     return;
   }
-  const opts=['fresh|🆕 Fresh','done|✅ Done','banned|🚫 Banned'].map(s=>{
-    const[v,l]=s.split('|');return`<option value="${v}">${l}</option>`;
-  }).join('');
-  body.innerHTML=list.map(a=>{
-    const net=a.status==='banned'?-a.buyPrice:a.status==='done'?(a.sellPrice-a.buyPrice-a.salary):null;
-    const netStr=net===null?'—':fmtUSD(net);
-    const netColor=net===null?'var(--muted)':net>=0?'var(--green)':'var(--red)';
-    const sid=a.id.replace(/'/g,"\\'");
-    return`<tr>
-      <td style="color:var(--muted);">${a.date}</td>
-      <td style="font-weight:600;">${a.name}</td>
-      <td><select class="sk-input" onchange="updateStock('${sid}','status',this.value)">
-        ${opts.replace(`value="${a.status}"`,`value="${a.status}" selected`)}
-      </select></td>
-      <td><input class="sk-input" type="number" value="${a.buyPrice}" min="0" step="0.01" style="color:var(--red);" onchange="updateStock('${sid}','buyPrice',this.value)"></td>
-      <td><input class="sk-input" type="number" value="${a.sellPrice}" min="0" step="0.01" style="color:var(--text);" onchange="updateStock('${sid}','sellPrice',this.value)"></td>
-      <td><input class="sk-input" type="number" value="${a.salary}" min="0" step="0.01" style="color:var(--amber);" onchange="updateStock('${sid}','salary',this.value)"></td>
-      <td style="font-weight:600;color:${netColor};">${netStr}</td>
-      <td style="color:var(--muted);font-size:11px;">${a.note||'—'}</td>
-      <td><button class="btn-del" onclick="deleteStock('${sid}')">x</button></td>
+
+  const statusOpts = [
+    {v:'fresh',l:'🆕 Fresh'},{v:'listed',l:'📋 Listed'},
+    {v:'sold',l:'✅ Sold'},{v:'banned',l:'🚫 Banned'}
+  ].map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
+
+  body.innerHTML = list.map(a=>{
+    const sid = a.id.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const isBanned = a.status==='banned';
+    const isSold   = a.status==='sold';
+    const rowStyle = isBanned
+      ? 'opacity:0.7;background:rgba(248,113,113,0.04);'
+      : isSold ? 'opacity:0.45;' : '';
+
+    function editCell(field, val, type='text', width='80px') {
+      const v = String(val||'').replace(/"/g,'&quot;');
+      return `<input class="sk-input" type="${type}" value="${v}" style="width:${width};" onchange="updateStock('${sid}','${field}',this.value)">`;
+    }
+    function checkCell(field, val) {
+      return `<input type="checkbox" ${val?'checked':''} style="cursor:pointer;width:16px;height:16px;" onchange="updateStock('${sid}','${field}',this.checked)">`;
+    }
+
+    // Action buttons: ban button (red) for active accounts, delete always
+    const banBtn = !isBanned && !isSold
+      ? `<button class="btn-del" title="Mark as Banned — records cost as loss" style="background:rgba(248,113,113,0.12);border-color:var(--red-border);font-size:10px;height:24px;padding:0 7px;white-space:nowrap;" onclick="markBanned('${sid}')">🚫 Ban</button>`
+      : '';
+    const delBtn = `<button class="btn-del" title="Delete permanently" style="height:22px;width:22px;padding:0;font-size:11px;" onclick="deleteStock('${sid}')">×</button>`;
+
+    // For banned rows show the loss amount prominently instead of editable status
+    const statusCell = isBanned
+      ? `<span style="color:var(--red);font-size:11px;font-family:'DM Mono',monospace;">🚫 Loss: <b>$${a.costed.toFixed(2)}</b></span>`
+      : `<select class="sk-input" style="width:90px;color:${a.status==='fresh'?'var(--blue)':a.status==='listed'?'var(--green)':'var(--muted)'};" onchange="updateStock('${sid}','status',this.value)">
+          ${statusOpts.replace(`value="${a.status}"`,`value="${a.status}" selected`)}
+        </select>`;
+
+    return `<tr style="${rowStyle}">
+      <td style="font-family:'DM Mono',monospace;user-select:all;">${editCell('username', a.username,'text','100px')}</td>
+      <td style="font-family:'DM Mono',monospace;">${editCell('acct_id', a.acct_id,'text','110px')}</td>
+      <td>${editCell('level_method', a.level_method,'text','70px')}</td>
+      <td><span class="tag t-usd" style="font-size:9px;">${a.server||'—'}</span></td>
+      <td>${editCell('assigned_to', a.assigned_to,'text','75px')}</td>
+      <td style="font-size:11px;">${editCell('rank', a.rank,'text','110px')}</td>
+      <td>${editCell('champs', a.champs,'text','50px')}</td>
+      <td>${editCell('be', a.be,'text','55px')}</td>
+      <td>${editCell('wl', a.wl,'text','55px')}</td>
+      <td>${editCell('winrate', a.winrate,'text','48px')}</td>
+      <td>${editCell('lvl', a.lvl,'text','40px')}</td>
+      <td style="text-align:center;">${checkCell('worker_payment', a.worker_payment)}</td>
+      <td style="text-align:center;">${checkCell('listing_status', a.listing_status)}</td>
+      <td>${editCell('listed_on', a.listed_on,'text','75px')}</td>
+      <td style="color:var(--amber);font-family:'DM Mono',monospace;">${editCell('ref', a.ref,'text','80px')}</td>
+      <td><input class="sk-input" type="number" value="${a.costed||0}" min="0" step="0.01" style="width:65px;color:var(--red);" onchange="updateStock('${sid}','costed',this.value)"></td>
+      <td>${statusCell}</td>
+      <td>
+        <div class="action-cell" style="flex-direction:column;gap:3px;align-items:flex-start;">
+          ${banBtn}
+          ${delBtn}
+        </div>
+      </td>
     </tr>`;
   }).join('');
+}
+
+// Import accounts from CSV file
+function importStockCSV(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  if(!confirm('Import CSV? This will ADD accounts to your current stock (not replace).')) {
+    event.target.value=''; return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const lines = text.split('\n').filter(l=>l.trim());
+    if(lines.length<2){ alert('No data found in CSV.'); return; }
+
+    // Parse CSV with proper quote handling
+    function parseLine(line) {
+      const result=[];let cur='';let inQ=false;
+      for(let i=0;i<line.length;i++){
+        const c=line[i];
+        if(c==='"'){inQ=!inQ;}
+        else if(c===','&&!inQ){result.push(cur.trim());cur='';}
+        else{cur+=c;}
+      }
+      result.push(cur.trim());
+      return result;
+    }
+
+    const headers = parseLine(lines[0]).map(h=>h.replace(/^\uFEFF/,'').toLowerCase().trim());
+    const idx = name => headers.indexOf(name);
+
+    let added=0;
+    for(let i=1;i<lines.length;i++){
+      const r = parseLine(lines[i]);
+      const username = r[idx('username')]||'';
+      if(!username.trim()) continue;
+      // Parse cost
+      const costRaw = r[idx('costed')]||'';
+      const costM = String(costRaw).match(/(\d+(?:\.\d+)?)/);
+      const cost = costM ? parseFloat(costM[1]) : 0;
+      stock.push({
+        id: 'csv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+i,
+        username: username.trim(),
+        acct_id: (r[idx('id')]||'').trim(),
+        level_method: (r[idx('level method')]||'').trim(),
+        server: (r[idx('server')]||'').trim(),
+        assigned_to: (r[idx('assigned to')]||'').trim(),
+        rank: (r[idx('rank')]||'').trim(),
+        champs: (r[idx('champs')]||'').trim(),
+        be: (r[idx('be')]||'').trim(),
+        wl: (r[idx('w/l')]||'').trim(),
+        winrate: (r[idx('win rate')]||'').trim(),
+        lvl: (r[idx('lvl')]||'').trim(),
+        worker_payment: (r[idx('worker payment')]||'').toLowerCase()==='checked',
+        listing_status: (r[idx('listing status')]||'').toLowerCase()==='checked',
+        listed_on: (r[idx('listed on')]||'').trim(),
+        ref: (r[idx('ref')]||'').trim(),
+        info: (r[idx('info')]||'').trim(),
+        costed: cost,
+        status: 'listed'
+      });
+      added++;
+    }
+    saveLocal(); renderStock(); syncStockSilent();
+    alert('Imported '+added+' accounts successfully!');
+  };
+  reader.readAsText(file, 'UTF-8');
+  event.target.value='';
 }
 
 // ─── SALES/DAY CHART ─────────────────────────────
@@ -1976,16 +2389,37 @@ setInterval(() => {
 }, 120000);
 
 // ─── INIT ─────────────────────────────────────────
+// CSV stock data pre-loaded from your Airtable export
+const CSV_STOCK_DATA = [{"id": "csv_0", "username": "siikes6090", "password": "", "acct_id": "Viandenyuvan#NA1", "old_pw": "", "level_method": "By Hand", "server": "NA", "assigned_to": "hussiny/-3lp", "rank": "Iron IV -3LP", "champs": "23", "be": "49300", "wl": "1W 20L", "winrate": "4%", "lvl": "33", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-87", "info": "", "costed": 22.0, "status": "listed"}, {"id": "csv_1", "username": "Zivaubrone", "password": "", "acct_id": "Zivaubrone#3666", "old_pw": "", "level_method": "By Bot", "server": "NA", "assigned_to": "", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "26200", "wl": "1W 20L", "winrate": "8% WR", "lvl": "31 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#NA-104", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_2", "username": "Arielianita", "password": "", "acct_id": "Arielianita#9221", "old_pw": "", "level_method": "By Bot", "server": "NA", "assigned_to": "", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "50000", "wl": "1W 20L", "winrate": "8% WR", "lvl": "31 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#NA-106", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_3", "username": "Cergelanarma", "password": "", "acct_id": "Cergelanarma#5553", "old_pw": "", "level_method": "By Bot", "server": "NA", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "29925", "wl": "1W 20L", "winrate": "8%WR", "lvl": "31 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#NA-108", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_4", "username": "Helsanattac", "password": "", "acct_id": "Helsanattac#9646", "old_pw": "", "level_method": "By Bot", "server": "NA", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "36400", "wl": "1W 20L", "winrate": "8%WR", "lvl": "31 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#NA-109", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_5", "username": "Macindya", "password": "", "acct_id": "Macindya#3217", "old_pw": "", "level_method": "By Bot", "server": "NA", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "36400", "wl": "2W 20L", "winrate": "12%WR", "lvl": "LVL 32", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#NA-110", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_6", "username": "Magosela", "password": "", "acct_id": "Magosela#5093", "old_pw": "", "level_method": "By Bot", "server": "NA", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "34440", "wl": "2W 20L", "winrate": "12%WR", "lvl": "LVL32", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#NA-111", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_7", "username": "Bufdomest", "password": "", "acct_id": "Bufdomest#NA1", "old_pw": "", "level_method": "By Bot", "server": "NA", "assigned_to": "", "rank": "(P) Iron 1 0lp\nHonor lvl 3", "champs": "20 Champ", "be": "33500", "wl": "0W 1L", "winrate": "0", "lvl": "30", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#NA-54", "info": "", "costed": 11.0, "status": "listed"}, {"id": "csv_8", "username": "Aisaakorius", "password": "", "acct_id": "Aisaakorius#NA1", "old_pw": "", "level_method": "By Bot", "server": "NA", "assigned_to": "", "rank": "(P) Iron 1 0lp\nHonor lvl 3", "champs": "20 Champ", "be": "33500", "wl": "0W 1L", "winrate": "0", "lvl": "30", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#NA-55", "info": "", "costed": 11.0, "status": "listed"}, {"id": "csv_9", "username": "siikes6091", "password": "", "acct_id": "Yaseylenzit#NA1", "old_pw": "", "level_method": "By Hand", "server": "NA", "assigned_to": "yousefmagdy31", "rank": "Ranked Ready | 10 Draft Wins | Untouched loot", "champs": "", "be": "", "wl": "", "winrate": "", "lvl": "", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-89", "info": "", "costed": 15.0, "status": "listed"}, {"id": "csv_10", "username": "siikes6071", "password": "", "acct_id": "Rettellinareb#NA1", "old_pw": "", "level_method": "By Hand", "server": "NA", "assigned_to": "yousefmagdy31", "rank": "Ranked Ready | 10 Draft Wins | Untouched loot", "champs": "", "be": "", "wl": "", "winrate": "", "lvl": "", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-90", "info": "", "costed": 15.0, "status": "listed"}, {"id": "csv_11", "username": "siikes6070", "password": "", "acct_id": "Thambhina#NA1", "old_pw": "", "level_method": "By Hand", "server": "NA", "assigned_to": "yousefmagdy31", "rank": "Ranked Ready | 10 Draft Wins | Untouched loot", "champs": "", "be": "", "wl": "", "winrate": "", "lvl": "", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-91", "info": "", "costed": 15.0, "status": "listed"}, {"id": "csv_12", "username": "siikes6061", "password": "", "acct_id": "Niasmanellynosla#NA1", "old_pw": "", "level_method": "By Hand", "server": "NA", "assigned_to": "yousefmagdy31", "rank": "Ranked Ready | 10 Draft Wins | Untouched loot", "champs": "", "be": "", "wl": "", "winrate": "", "lvl": "", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-92", "info": "", "costed": 15.0, "status": "listed"}, {"id": "csv_15", "username": "Nanysonrigna", "password": "", "acct_id": "Nanysonrigna#6681", "old_pw": "", "level_method": "By Hand", "server": "EUW", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "19200", "wl": "2W 20L", "winrate": "10%WR", "lvl": "33 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-67", "info": "", "costed": 14.0, "status": "listed"}, {"id": "csv_16", "username": "Lsenewalante", "password": "", "acct_id": "Lsenewalante#8488", "old_pw": "", "level_method": "By Hand", "server": "EUW", "assigned_to": "yousefmagdy31", "rank": "Unranked | Ranked Ready | 10 Draft Wins | Untouched loot", "champs": "3 Champ", "be": "20500 BE", "wl": "10W 0L", "winrate": "100%WR", "lvl": "LVL 31", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-61", "info": "Lsenewalante@ministry-of-silly-walks.de | 3447992808768992 | 21_06_1997 | 06_03_2024 | 38.45.67.88", "costed": 14.0, "status": "listed"}, {"id": "csv_17", "username": "Ferrettaluck", "password": "", "acct_id": "Ferrettaluck#7442", "old_pw": "", "level_method": "By Hand", "server": "EUW", "assigned_to": "yousefmagdy31", "rank": "Unranked | Ranked Ready | 10 Draft Wins | Untouched loot", "champs": "3 Champ", "be": "21450 BE", "wl": "10W 0L", "winrate": "100%WR", "lvl": "LVL 31", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-64", "info": "Ferrettaluck@antispam.de | 3447992995678144 | 26_06_1998 | 06_03_2024 | 103.114.162.147", "costed": 14.0, "status": "listed"}, {"id": "csv_18", "username": "Hortnerscaid", "password": "", "acct_id": "Hortnerscaid#2854", "old_pw": "", "level_method": "By Hand", "server": "EUW", "assigned_to": "yousefmagdy31", "rank": "Unranked | Ranked Ready | 10 Draft Wins | Untouched loot", "champs": "3 Champ", "be": "20010 BE", "wl": "10W 0L", "winrate": "100%WR", "lvl": "LVL 31", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-65", "info": "Hortnerscaid@sofortmail.de | 3447993008571712 | 22_10_1998 | 06_03_2024 | 103.114.163.57", "costed": 14.0, "status": "listed"}, {"id": "csv_19", "username": "Pomaceensis", "password": "", "acct_id": "Pomaceensis#EUW", "old_pw": "", "level_method": "By Bot", "server": "EUW", "assigned_to": "", "rank": "Iron 1 (p)", "champs": "20 Champ", "be": "43100", "wl": "0W 1L", "winrate": "0", "lvl": "30", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-12", "info": "", "costed": 11.0, "status": "listed"}, {"id": "csv_20", "username": "Papparv", "password": "", "acct_id": "Papparv#EUW", "old_pw": "", "level_method": "By Bot", "server": "EUW", "assigned_to": "", "rank": "Iron 1 (p)", "champs": "20 Champ", "be": "43400", "wl": "0W 1L", "winrate": "0", "lvl": "30", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-14", "info": "", "costed": 11.0, "status": "listed"}, {"id": "csv_23", "username": "JackenQuin", "password": "", "acct_id": "JackenQuin#2603", "old_pw": "", "level_method": "By Bot", "server": "EUNE", "assigned_to": "Hassan", "rank": "Iron IV -3LP", "champs": "21", "be": "68700", "wl": "3W22L", "winrate": "12%", "lvl": "32", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-30", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_24", "username": "RilionalJach", "password": "", "acct_id": "RilionalJach#8953", "old_pw": "", "level_method": "By Bot", "server": "EUNE", "assigned_to": "Hassan", "rank": "Iron IV -1LP", "champs": "22", "be": "68100", "wl": "3W22L", "winrate": "12%", "lvl": "32", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-31", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_25", "username": "u454140", "password": "", "acct_id": "wnttrdpnt#EUNE", "old_pw": "", "level_method": "By Bot", "server": "EUNE", "assigned_to": "Abdo", "rank": "Iron IV", "champs": "21", "be": "59.700", "wl": "1W26L", "winrate": "3%", "lvl": "59", "worker_payment": false, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-39", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_26", "username": "RicaQianya", "password": "", "acct_id": "RicaQianya#7724", "old_pw": "", "level_method": "By Bot", "server": "EUNE", "assigned_to": "Hussiny", "rank": "Iron IV-9LP", "champs": "21", "be": "62.600", "wl": "1W20L", "winrate": "4%", "lvl": "32", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-40", "info": "", "costed": 18.0, "status": "listed"}, {"id": "csv_27", "username": "Pholinaugh", "password": "", "acct_id": "Pholinaugh#2190", "old_pw": "", "level_method": "By Bot", "server": "EUNE", "assigned_to": "", "rank": "(P) Iron 1 0lp", "champs": "20 Champ", "be": "39700", "wl": "0W 1L", "winrate": "", "lvl": "LVL30", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-5", "info": "", "costed": 11.0, "status": "listed"}, {"id": "csv_28", "username": "Rakaoldos", "password": "", "acct_id": "⁦Rakaoldos⁩#⁦4331⁩", "old_pw": "", "level_method": "By Bot", "server": "EUNE", "assigned_to": "", "rank": "(P) Iron 1 0lp", "champs": "20 Champ", "be": "40000", "wl": "0W 1L", "winrate": "", "lvl": "LVL30", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-6", "info": "", "costed": 11.0, "status": "listed"}, {"id": "csv_31", "username": "XienentQuill", "password": "", "acct_id": "XienentQuill#9050", "old_pw": "", "level_method": "By Bot", "server": "OCE", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "49990", "wl": "1W 20L", "winrate": "8%WR", "lvl": "32 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#OCE-15", "info": "", "costed": 19.5, "status": "listed"}, {"id": "csv_32", "username": "FaynGwenienn", "password": "", "acct_id": "FaynGwenienn#5802", "old_pw": "", "level_method": "By Bot", "server": "OCE", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "48200", "wl": "1W 20L", "winrate": "8%WR", "lvl": "32 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#OCE-16", "info": "", "costed": 19.5, "status": "listed"}, {"id": "csv_33", "username": "RlerliSelh", "password": "", "acct_id": "RlerliSelh#8738", "old_pw": "", "level_method": "By Bot", "server": "OCE", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "54300", "wl": "1W 20L", "winrate": "8%WR", "lvl": "32 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#OCE-17", "info": "", "costed": 19.5, "status": "listed"}, {"id": "csv_34", "username": "QimmHarisema", "password": "", "acct_id": "QimmHarisema#8361", "old_pw": "", "level_method": "By Bot", "server": "OCE", "assigned_to": "yousefmagdy31", "rank": "Iron IV 0LP", "champs": "20 Champ", "be": "54300", "wl": "1W 20L", "winrate": "8%WR", "lvl": "32 LVL", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#OCE-18", "info": "", "costed": 19.5, "status": "listed"}, {"id": "csv_35", "username": "XyleiGrah", "password": "", "acct_id": "XyleiGrah#5359", "old_pw": "", "level_method": "By Bot", "server": "OCE", "assigned_to": "abdo", "rank": "Iron IV", "champs": "20", "be": "49.300", "wl": "0W20L", "winrate": "0", "lvl": "31", "worker_payment": false, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#OCE-13", "info": "", "costed": 19.5, "status": "listed"}, {"id": "csv_36", "username": "WyandPhowe", "password": "", "acct_id": "WyandPhowe#4091", "old_pw": "", "level_method": "By Bot", "server": "OCE", "assigned_to": "abdo", "rank": "Iron IV", "champs": "20", "be": "49.600", "wl": "0W20L", "winrate": "0", "lvl": "31", "worker_payment": false, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#OCE-14", "info": "", "costed": 19.5, "status": "listed"}, {"id": "csv_37", "username": "Yndoschayinelie", "password": "", "acct_id": "Yndoschayinelie#0280", "old_pw": "", "level_method": "By Bot", "server": "OCE", "assigned_to": "", "rank": "(P) Iron 1 0lp\nHonor lvl 3", "champs": "20", "be": "47400", "wl": "0W 1L", "winrate": "0", "lvl": "30", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-1V9", "ref": "REF#OCE-9", "info": "", "costed": 9.5, "status": "listed"}, {"id": "csv_38", "username": "YnarrevPionta", "password": "", "acct_id": "YnarrevPionta#1378", "old_pw": "", "level_method": "By Bot", "server": "OCE", "assigned_to": "", "rank": "(P) Iron 1 0lp\nHonor lvl 3", "champs": "20", "be": "45500", "wl": "0W 1L", "winrate": "0", "lvl": "30", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#OCE-10", "info": "", "costed": 9.5, "status": "listed"}, {"id": "csv_41", "username": "Gyandrenara", "password": "", "acct_id": "xiner#25512", "old_pw": "", "level_method": "", "server": "NA", "assigned_to": "abdo", "rank": "Silver IV (P)", "champs": "45", "be": "6520", "wl": "0W 1L", "winrate": "0%", "lvl": "37", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-72", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_42", "username": "Crauuyelm", "password": "", "acct_id": "Crauuyelm#8872", "old_pw": "", "level_method": "", "server": "NA", "assigned_to": "abdo", "rank": "Silver IV (P)", "champs": "36", "be": "35200", "wl": "0W 1L", "winrate": "0%", "lvl": "36", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-75", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_43", "username": "Phodchang", "password": "", "acct_id": "Phodchang#5979", "old_pw": "", "level_method": "", "server": "NA", "assigned_to": "abdo", "rank": "Silver I (P)", "champs": "51", "be": "11500", "wl": "0W 1L", "winrate": "0%", "lvl": "37", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-76", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_44", "username": "Charnarme", "password": "", "acct_id": "⁦ーーーーーーーーーーーーーーーー⁩#⁦7243⁩", "old_pw": "", "level_method": "", "server": "NA", "assigned_to": "abdo", "rank": "Gold IV (P)", "champs": "57", "be": "690", "wl": "0W 1L", "winrate": "0%", "lvl": "38", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-77", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_45", "username": "Fupwerund", "password": "", "acct_id": "", "old_pw": "", "level_method": "", "server": "NA", "assigned_to": "Abdo", "rank": "Silver Ill (P)", "champs": "72", "be": "6625 BE \\ 600 RP", "wl": "0W 1L", "winrate": "0%", "lvl": "43", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-80", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_46", "username": "Noszsmos", "password": "", "acct_id": "⁦Noszsmos⁩#⁦NA1⁩", "old_pw": "", "level_method": "", "server": "NA", "assigned_to": "Abdo", "rank": "Gold iv (P)", "champs": "53", "be": "6831", "wl": "0W 1L", "winrate": "0%", "lvl": "40", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#NA-81", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_47", "username": "Cinitavertul", "password": "", "acct_id": "⁦bynit⁩#⁦76846⁩", "old_pw": "", "level_method": "", "server": "EUNE", "assigned_to": "", "rank": "Bronze I (P)", "champs": "40", "be": "8555", "wl": "0W 1L", "winrate": "0%", "lvl": "34", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-13", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_48", "username": "Samituren", "password": "", "acct_id": "Samituren#2072", "old_pw": "", "level_method": "", "server": "EUNE", "assigned_to": "", "rank": "Bronze II (P)", "champs": "44", "be": "4615", "wl": "1W 0L", "winrate": "100%", "lvl": "32", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-16", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_49", "username": "Dyntadtor", "password": "", "acct_id": "⁦Dyntadtor⁩#⁦6008⁩", "old_pw": "", "level_method": "", "server": "EUNE", "assigned_to": "", "rank": "Gold Il (P)", "champs": "78", "be": "2198", "wl": "0W 1L", "winrate": "0%", "lvl": "47", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-20", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_50", "username": "Tinnaswar", "password": "", "acct_id": "Myrtsin Mosse#MOSSE", "old_pw": "", "level_method": "", "server": "EUNE", "assigned_to": "", "rank": "Silver IIl (P)", "champs": "43", "be": "5256", "wl": "0W 1L", "winrate": "0%", "lvl": "35", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUNE-23", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_51", "username": "Llalbyraya", "password": "", "acct_id": "SexeL4nd#9719", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "", "rank": "Iron 1 (p)", "champs": "28 Champ", "be": "50200", "wl": "", "winrate": "", "lvl": "42", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-5", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_52", "username": "Xievalakarge", "password": "", "acct_id": "thatsagoodboat #EUW", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "", "rank": "Bronze Il (p)", "champs": "53 champ", "be": "6496", "wl": "", "winrate": "", "lvl": "33", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-10", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_53", "username": "Raverageu", "password": "", "acct_id": "Raverageu#73021", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "", "rank": "Silver II (p)\nHonor lvl 5\nSilver 2 season 15 either", "champs": "65 Champ", "be": "3992", "wl": "", "winrate": "", "lvl": "34", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-17", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_54", "username": "Quaiworhat", "password": "", "acct_id": "TIGERMID19#19K19", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "", "rank": "Plat IV", "champs": "34", "be": "700", "wl": "", "winrate": "", "lvl": "36", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "REF#EUW-23", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_55", "username": "Umpqolom", "password": "", "acct_id": "Umpqolom#9891", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "", "rank": "bronze iv (P)", "champs": "41", "be": "7085", "wl": "0W 1L", "winrate": "0%", "lvl": "31", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-34", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_56", "username": "Tygwharan", "password": "", "acct_id": "Tygwharan#1492", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "", "rank": "Silver Ill (P)", "champs": "38", "be": "12100", "wl": "0W 1L", "winrate": "0%", "lvl": "31", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-39", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_57", "username": "Tycvelm", "password": "", "acct_id": "Tycvelm#3827", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "", "rank": "Silver Ill (P)", "champs": "39", "be": "5395", "wl": "0W 1L", "winrate": "0%", "lvl": "31", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-40", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_58", "username": "Zelahlelp", "password": "", "acct_id": "Paris#FRCH", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "abdo", "rank": "Plat iv (P)", "champs": "60", "be": "15900", "wl": "0W 1L", "winrate": "0%", "lvl": "55", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-42", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_59", "username": "Hariarltoni", "password": "", "acct_id": "⁦Hariarltoni⁩#⁦3538⁩", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "", "rank": "Silver IV\nHonor lvl 4", "champs": "69", "be": "5591", "wl": "4W 6L", "winrate": "40%", "lvl": "45", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-44", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_60", "username": "Polmvorech", "password": "", "acct_id": "TIGER19#LFQs", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "abdo", "rank": "Gold 1 (P)", "champs": "33", "be": "12.400", "wl": "2W 1L", "winrate": "66%", "lvl": "33", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-47", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_61", "username": "Nodfenust", "password": "", "acct_id": "ベール泥棒#1102", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "abdo", "rank": "bronze 2 (P)", "champs": "60", "be": "36.500", "wl": "0W 1L", "winrate": "0%", "lvl": "45", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-48", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_62", "username": "Ynaythueron", "password": "", "acct_id": "Ynaythueron#0208", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "hussiny", "rank": "silver iv (P)", "champs": "42", "be": "28.600", "wl": "0W 1L", "winrate": "0%", "lvl": "36", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-49", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_63", "username": "Piaakend", "password": "", "acct_id": "Piaakend#1556", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "hussiny", "rank": "silver iv (P)", "champs": "31", "be": "34.6k", "wl": "0W 1L", "winrate": "0%", "lvl": "34", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-50", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_64", "username": "Haiykbel", "password": "", "acct_id": "Reytalat#1608", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "hussiny", "rank": "silver 3 (P)", "champs": "33", "be": "36.300", "wl": "0W 1L", "winrate": "0%", "lvl": "34", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-51", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_65", "username": "Polutherves", "password": "", "acct_id": "⁦Polutherves⁩#⁦7433⁩", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "hussiny", "rank": "silver iv (P)", "champs": "33", "be": "4504", "wl": "0W 1L", "winrate": "0%", "lvl": "34", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-52", "info": "", "costed": 0.0, "status": "listed"}, {"id": "csv_66", "username": "Ghtoniternet", "password": "", "acct_id": "Ghtoniternet#5631", "old_pw": "", "level_method": "", "server": "EUW", "assigned_to": "hussiny", "rank": "bronze 2 (P)", "champs": "36", "be": "4700", "wl": "0W 1L", "winrate": "0%", "lvl": "31", "worker_payment": true, "listing_status": true, "listed_on": "Eldo-GB-EB24", "ref": "R#EUW-53", "info": "", "costed": 0.0, "status": "listed"}];
+
 (async function init() {
   loadLocal();
   loadGoal();
   loadStockDef();
+  // Pre-load CSV stock data if this is a fresh install (no stock in localStorage)
+  if(!stock.length && CSV_STOCK_DATA && CSV_STOCK_DATA.length) {
+    stock = CSV_STOCK_DATA;
+    saveLocal();
+  }
+  // Render from local cache immediately — never block on network
   document.getElementById('loading-text').textContent = 'Loading cached data...';
   rerender();
-  document.getElementById('loading-text').textContent = 'Syncing with Google Sheets...';
-  await syncAll(false);
-  lastSyncTime = Date.now();
+  // Hide loader RIGHT NOW — don't wait for Google Sheets
   document.getElementById('loading').style.display = 'none';
+  // Sync in background with a hard 10s timeout — if it fails, user already has their data
+  try {
+    const syncWithTimeout = Promise.race([
+      syncAll(false),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+    ]);
+    await syncWithTimeout;
+  } catch(e) {
+    if(e.message === 'timeout') {
+      setSyncStatus('err', 'Sheets timeout — using local data');
+    }
+    // else syncAll already handled its own error display
+  }
+  lastSyncTime = Date.now();
 })();
 </script>
 
