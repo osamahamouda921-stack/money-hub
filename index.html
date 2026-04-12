@@ -210,9 +210,10 @@ body::after{
 .wallet-total{background:linear-gradient(135deg,rgba(120,60,220,0.12),rgba(200,150,30,0.08));border:1px solid rgba(167,139,250,0.3);}
 /* progress bar */
 .goal-bar-wrap{background:var(--surface2);border-radius:6px;height:8px;overflow:hidden;margin-top:6px;}
-.goal-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green),#22d3ee);transition:width 0.5s ease;}
-.goal-bar-fill.warn{background:linear-gradient(90deg,var(--amber),#f97316);}
+.goal-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#6366f1,#a78bfa);transition:width 0.5s ease;}
+.goal-bar-fill.close{background:linear-gradient(90deg,var(--amber),#f97316);}
 .goal-bar-fill.danger{background:linear-gradient(90deg,var(--red),#f97316);}
+.goal-bar-fill.done{background:linear-gradient(90deg,var(--green),#22d3ee);}
 .goal-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px;}
 /* net profit metric */
 .mv-net-pos{color:#22d3ee;}
@@ -1507,7 +1508,7 @@ function renderSalesStats() {
   if (goalRaw > 0) {
     const pct = Math.min(100, (profit / goalRaw) * 100);
     bar.style.width = pct + '%';
-    bar.className = 'goal-bar-fill' + (pct >= 100 ? '' : pct >= 60 ? ' warn' : ' danger');
+    bar.className = 'goal-bar-fill' + (pct >= 100 ? ' done' : pct >= 80 ? ' close' : pct < 30 ? ' danger' : '');
     goalLabel.textContent = fmtUSD(profit) + ' of ' + fmtUSD(goalRaw);
     goalPct.textContent = pct.toFixed(0) + '%';
   } else {
