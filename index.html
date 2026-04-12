@@ -2231,62 +2231,88 @@ function importStockCSV(event) {
   const reader = new FileReader();
   reader.onload = e => {
     const text = e.target.result;
-    const lines = text.split('\n').filter(l=>l.trim());
-    if(lines.length<2){ alert('No data found in CSV.'); return; }
 
-    // Parse CSV with proper quote handling
-    function parseLine(line) {
-      const result=[];let cur='';let inQ=false;
-      for(let i=0;i<line.length;i++){
-        const c=line[i];
-        if(c==='"'){inQ=!inQ;}
-        else if(c===','&&!inQ){result.push(cur.trim());cur='';}
-        else{cur+=c;}
+    // Proper CSV parser — handles newlines AND commas inside quoted fields
+    function parseCSV(str) {
+      const rows = [];
+      let cur = [], field = '', inQ = false;
+      for(let i = 0; i < str.length; i++) {
+        const c = str[i];
+        if(c === '"') {
+          // Handle escaped double-quote ""
+          if(inQ && str[i+1] === '"') { field += '"'; i++; }
+          else { inQ = !inQ; }
+        } else if(c === ',' && !inQ) {
+          cur.push(field); field = '';
+        } else if((c === '\n' || c === '\r') && !inQ) {
+          if(c === '\r' && str[i+1] === '\n') i++; // skip \r\n
+          cur.push(field); field = '';
+          if(cur.some(f => f.trim())) rows.push(cur);
+          cur = [];
+        } else {
+          field += c;
+        }
       }
-      result.push(cur.trim());
-      return result;
+      // Last field/row
+      cur.push(field);
+      if(cur.some(f => f.trim())) rows.push(cur);
+      return rows;
     }
 
-    const headers = parseLine(lines[0]).map(h=>h.replace(/^\uFEFF/,'').toLowerCase().trim());
-    const idx = name => headers.indexOf(name);
+    const rows = parseCSV(text);
+    if(rows.length < 2) { alert('No data found in CSV.'); return; }
 
-    let added=0;
-    for(let i=1;i<lines.length;i++){
-      const r = parseLine(lines[i]);
-      const username = r[idx('username')]||'';
-      if(!username.trim()) continue;
-      // Parse cost
-      const costRaw = r[idx('costed')]||'';
-      const costM = String(costRaw).match(/(\d+(?:\.\d+)?)/);
-      const cost = costM ? parseFloat(costM[1]) : 0;
+    // Build header index map (lowercase)
+    const headers = rows[0].map(h => h.replace(/^\uFEFF/, '').toLowerCase().trim());
+    const idx = name => headers.indexOf(name.toLowerCase());
+
+    // Parse cost — extract leading number e.g. "18 $ (8 botted...)" → 18
+    function parseCost(raw) {
+      const m = String(raw||'').match(/^(\d+(?:\.\d+)?)\s*\$/);
+      return m ? parseFloat(m[1]) : 0;
+    }
+
+    let added = 0, skipped = 0;
+    for(let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      const username = (r[idx('username')]||'').trim();
+      if(!username) continue;
+
+      const ref = (r[idx('ref')]||'').trim();
+      // Skip duplicate REFs that already exist as listed accounts
+      if(ref && stock.some(a => a.ref && a.ref.trim() === ref && a.status === 'listed')) {
+        skipped++; continue;
+      }
+
       stock.push({
-        id: 'csv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+i,
-        username: username.trim(),
-        acct_id: (r[idx('id')]||'').trim(),
-        level_method: (r[idx('level method')]||'').trim(),
-        server: (r[idx('server')]||'').trim(),
-        assigned_to: (r[idx('assigned to')]||'').trim(),
-        rank: (r[idx('rank')]||'').trim(),
-        champs: (r[idx('champs')]||'').trim(),
-        be: (r[idx('be')]||'').trim(),
-        wl: (r[idx('w/l')]||'').trim(),
-        winrate: (r[idx('win rate')]||'').trim(),
-        lvl: (r[idx('lvl')]||'').trim(),
-        worker_payment: (r[idx('worker payment')]||'').toLowerCase()==='checked',
-        listing_status: (r[idx('listing status')]||'').toLowerCase()==='checked',
-        listed_on: (r[idx('listed on')]||'').trim(),
-        ref: (r[idx('ref')]||'').trim(),
-        info: (r[idx('info')]||'').trim(),
-        costed: cost,
+        id: 'csv_' + Date.now() + '_' + Math.random().toString(36).slice(2,6) + '_' + i,
+        username,
+        acct_id:        (r[idx('id')]              ||'').trim(),
+        level_method:   (r[idx('level method')]    ||'').trim(),
+        server:         (r[idx('server')]          ||'').trim(),
+        assigned_to:    (r[idx('assigned to')]     ||'').trim(),
+        rank:           (r[idx('rank')]            ||'').trim(),
+        champs:         (r[idx('champs')]          ||'').trim(),
+        be:             (r[idx('be')]              ||'').trim(),
+        wl:             (r[idx('w/l')]             ||'').trim(),
+        winrate:        (r[idx('win rate')]        ||'').trim(),
+        lvl:            (r[idx('lvl')]             ||'').trim(),
+        worker_payment: (r[idx('worker payment')] ||'').toLowerCase() === 'checked',
+        listing_status: (r[idx('listing status')] ||'').toLowerCase() === 'checked',
+        listed_on:      (r[idx('listed on')]       ||'').trim(),
+        ref,
+        info:           (r[idx('info')]            ||'').trim(),
+        costed:         parseCost(r[idx('costed')]),
         status: 'listed'
       });
       added++;
     }
+
     saveLocal(); renderStock(); syncStockSilent();
-    alert('Imported '+added+' accounts successfully!');
+    alert('Imported ' + added + ' accounts.' + (skipped ? ' Skipped ' + skipped + ' duplicate REFs.' : ''));
   };
   reader.readAsText(file, 'UTF-8');
-  event.target.value='';
+  event.target.value = '';
 }
 
 // ─── SALES/DAY CHART ─────────────────────────────
