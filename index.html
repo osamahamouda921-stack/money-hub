@@ -977,6 +977,7 @@ function salesToRows(arr) {
 
 function rowsToSales(rows) {
   if (!rows || rows.length < 2) return [];
+  const seen = new Set();
   return rows.slice(1).filter(r => r[0]).map(r => ({
     date: sanitizeDate(r[0]),
     ref: String(r[1]||''),
@@ -986,7 +987,14 @@ function rowsToSales(rows) {
     priceUSD: parseFloat(r[5])||0,
     costUSD: (r[6]!==''&&r[6]!==undefined&&r[6]!==null) ? parseFloat(r[6]) : null,
     profit: parseFloat(r[7])||0
-  }));
+  })).filter(s => {
+    // Dedup by REF (case-insensitive) — keep first occurrence
+    if(!s.ref) return true;
+    const key = s.ref.toLowerCase();
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function spendingToRows(arr) {
@@ -1239,6 +1247,17 @@ function addSale() {
     warn.style.display='block'; setTimeout(()=>warn.style.display='none',2500); return;
   }
   warn.style.display='none';
+
+  // Duplicate REF guard — REF is the account username, must be unique in sales
+  if(ref) {
+    const refLower = ref.toLowerCase();
+    const dupSale = sales.find(s => s.ref && s.ref.toLowerCase() === refLower);
+    if(dupSale) {
+      showToast('⚠️ A sale with REF "' + ref + '" already exists (' + dupSale.date + ') — duplicate blocked', 'amber');
+      return;
+    }
+  }
+
   sales.push({
     date: today(), ref, site, cur,
     priceOrig: price, priceUSD: toUSD(price, cur),
@@ -1355,11 +1374,35 @@ function addFromPaste() {
   if(!raw) return;
   const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
   let added = 0, skipped = 0, removedFresh = 0;
-  lines.forEach(line => {
+
+  // Build lookup sets for existing stock (case-insensitive username, and REF)
+  const existingUsernames = new Set(
+    stock.map(a => (a.username||'').toLowerCase()).filter(Boolean)
+  );
+  const existingRefs = new Set(
+    stock.filter(a=>a.ref && a.status==='listed').map(a=>a.ref.trim())
+  );
+
+  const seenInPaste = new Set(); // dedup usernames within paste batch
+
+  lines.forEach((line, idx) => {
     const parsed = parsePastedRow(line);
     if(!parsed) return;
+
+    const uLower = (parsed.username||'').toLowerCase();
     const ref = (parsed.ref||'').trim();
-    if(ref && stock.some(a=>a.ref && a.ref.trim()===ref && a.status==='listed')) { skipped++; return; }
+
+    // Skip duplicate within this paste
+    if(uLower && seenInPaste.has(uLower)) { skipped++; return; }
+    // Skip if username already exists in stock (any status)
+    if(uLower && existingUsernames.has(uLower)) { skipped++; return; }
+    // Skip if REF already exists as a listed account
+    if(ref && existingRefs.has(ref)) { skipped++; return; }
+
+    if(uLower) seenInPaste.add(uLower);
+    if(uLower) existingUsernames.add(uLower);
+    if(ref) existingRefs.add(ref);
+
     // Auto-remove matching fresh account by username or acct_id
     const matchIdx = stock.findIndex(a =>
       a.status === 'fresh' && (
@@ -1368,17 +1411,24 @@ function addFromPaste() {
       )
     );
     if(matchIdx !== -1) { stock.splice(matchIdx, 1); removedFresh++; }
-    stock.push({ id: 'paste_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+added, ...parsed });
+
+    const uid = 'paste_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).slice(2,8);
+    stock.push({ id: uid, ...parsed });
     added++;
   });
-  if(!added) { warn.style.display='block'; setTimeout(()=>warn.style.display='none',3000); return; }
+
+  if(!added) {
+    if(skipped) showToast('⚠️ All accounts already in stock — nothing added (' + skipped + ' duplicate' + (skipped>1?'s':'') + ')', 'amber');
+    else { warn.style.display='block'; setTimeout(()=>warn.style.display='none',3000); }
+    return;
+  }
   document.getElementById('sk-paste-input').value='';
   document.getElementById('sk-paste-preview').style.display='none';
   saveLocal(); renderStock(); syncStockSilent(); checkReminders();
   let msg = '📋 Added '+added+' listed account'+(added>1?'s':'');
-  if(removedFresh) msg += ' · 🗑️ Auto-removed '+removedFresh+' fresh account'+(removedFresh>1?'s':'');
-  if(skipped) msg += ' · Skipped '+skipped+' duplicate'+(skipped>1?'s':'');
-  showToast(msg, removedFresh ? 'amber' : 'green');
+  if(removedFresh) msg += ' · 🗑️ Auto-removed '+removedFresh+' fresh'+(removedFresh>1?'s':'');
+  if(skipped) msg += ' · ⚠️ Skipped '+skipped+' duplicate'+(skipped>1?'s':'');
+  showToast(msg, (removedFresh || skipped) ? 'amber' : 'green');
 }
 
 function clearPaste() {
@@ -1989,6 +2039,8 @@ function stockToRows(arr) {
 
 function rowsToStock(rows) {
   if(!rows||rows.length<2) return [];
+  const seenIds = new Set();
+  const seenUsernames = new Set();
   return rows.slice(1).filter(r=>r[0]).map(r=>({
     id: String(r[0]),
     username: String(r[1]||''),
@@ -2009,7 +2061,16 @@ function rowsToStock(rows) {
     info: String(r[16]||''),
     costed: parseFloat(r[17])||0,
     status: String(r[18]||'fresh')
-  }));
+  })).filter(a => {
+    // Dedup by id — keep first occurrence
+    if(seenIds.has(a.id)) return false;
+    seenIds.add(a.id);
+    // Dedup by username (case-insensitive) — keep first occurrence
+    const uLower = (a.username||'').toLowerCase();
+    if(uLower && seenUsernames.has(uLower)) return false;
+    if(uLower) seenUsernames.add(uLower);
+    return true;
+  });
 }
 
 // Keep old stub functions that rerender() calls — they now just call new functions
@@ -2118,11 +2179,30 @@ function addFreshFromPaste() {
   const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
   const parsed = lines.map(parseFreshRow).filter(Boolean);
   if(!parsed.length) { warn.style.display='block'; setTimeout(()=>warn.style.display='none',3000); return; }
-  let added = 0;
-  parsed.forEach(a => {
+
+  // Build a set of existing usernames in stock (case-insensitive) for dedup
+  const existingUsernames = new Set(
+    stock.map(a => (a.username||'').toLowerCase()).filter(Boolean)
+  );
+
+  let added = 0, skipped = 0;
+  const seenInPaste = new Set(); // dedup within the paste itself
+
+  parsed.forEach((a, idx) => {
+    const uLower = (a.username||'').toLowerCase();
+    // Skip if duplicate within this paste batch
+    if(seenInPaste.has(uLower)) { skipped++; return; }
+    // Skip if already exists in stock (any status)
+    if(existingUsernames.has(uLower)) { skipped++; return; }
+
+    seenInPaste.add(uLower);
+    existingUsernames.add(uLower); // prevent further matches in this batch
+
     const cost = getDefaultCost(a.server, a.level_method);
+    // Use idx + performance.now() to guarantee unique IDs even in same millisecond
+    const uid = 'fresh_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).slice(2,8);
     stock.push({
-      id: 'fresh_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+added,
+      id: uid,
       username: a.username,
       acct_id: a.acct_id,
       level_method: a.level_method,
@@ -2134,10 +2214,19 @@ function addFreshFromPaste() {
     });
     added++;
   });
+
   document.getElementById('sk-fresh-paste').value = '';
   document.getElementById('sk-fresh-preview').style.display = 'none';
+
+  if(!added && skipped) {
+    showToast('⚠️ All ' + skipped + ' account' + (skipped>1?'s were':' was') + ' already in stock — nothing added', 'amber');
+    return;
+  }
+
   saveLocal(); renderStock(); syncStockSilent();
-  showToast('✅ Added ' + added + ' fresh account' + (added>1?'s':'') + ' to stock', 'green');
+  let msg = '✅ Added ' + added + ' fresh account' + (added>1?'s':'') + ' to stock';
+  if(skipped) msg += ' · ⚠️ Skipped ' + skipped + ' duplicate' + (skipped>1?'s':'');
+  showToast(msg, skipped ? 'amber' : 'green');
 }
 
 // ─── SMART REMINDERS ─────────────────────────────
@@ -2210,6 +2299,17 @@ function addStockAccounts() {
   const method = document.getElementById('sk-add-level-method').value;
   const costInput = parseFloat(document.getElementById('sk-add-costed').value);
   const cost   = (!isNaN(costInput) && costInput > 0) ? costInput : getDefaultCost(server, method);
+
+  // Dedup check — username must be unique in stock
+  if(qty === 1) {
+    const uLower = username.toLowerCase();
+    const dup = stock.find(a => (a.username||'').toLowerCase() === uLower);
+    if(dup) {
+      showToast('⚠️ Account "' + username + '" already exists in stock — duplicate blocked', 'amber');
+      return;
+    }
+  }
+
   const base = {
     acct_id: '', level_method: method, server, assigned_to: '',
     rank: '', champs: '', be: '', wl: '', winrate: '', lvl: '',
@@ -2218,10 +2318,14 @@ function addStockAccounts() {
     costed: cost,
     status: 'fresh'
   };
+  let skipped = 0;
   for(let i=0;i<qty;i++){
+    const uname = qty>1 ? username+' #'+(i+1) : username;
+    const uLower = uname.toLowerCase();
+    if(stock.find(a=>(a.username||'').toLowerCase()===uLower)) { skipped++; continue; }
     stock.push({
-      id: Date.now()+'_'+Math.random().toString(36).slice(2,7),
-      username: qty>1 ? username+' #'+(i+1) : username,
+      id: Date.now()+'_'+i+'_'+Math.random().toString(36).slice(2,7),
+      username: uname,
       ...base
     });
   }
@@ -2229,6 +2333,7 @@ function addStockAccounts() {
   document.getElementById('sk-add-qty').value='1';
   saveLocal(); renderStock(); syncStockSilent();
   checkReminders();
+  if(skipped) showToast('⚠️ ' + skipped + ' account' + (skipped>1?'s were':' was') + ' skipped (duplicate username)', 'amber');
 }
 
 function updateStock(id, field, value) {
