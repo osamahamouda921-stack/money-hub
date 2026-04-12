@@ -312,7 +312,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     </div>
     <div class="metric" style="padding:11px 14px;">
       <p class="ml" style="margin-bottom:5px;">Sales / Day — This Month</p>
-      <canvas id="sales-day-chart" style="width:100%;height:52px;display:block;"></canvas>
+      <canvas id="sales-day-chart" style="width:100%;height:64px;display:block;"></canvas>
       <p style="font-size:10px;color:var(--hint);font-family:'DM Mono',monospace;margin-top:3px;" id="chart-empty-msg"></p>
     </div>
   </div>
@@ -2769,7 +2769,7 @@ function renderSalesDayChart() {
     emptyMsg.textContent='No sales yet this month';
     const ctx=canvas.getContext('2d');
     canvas.width=canvas.parentElement.clientWidth||300;
-    canvas.height=52; ctx.clearRect(0,0,canvas.width,canvas.height);
+    canvas.height=64; ctx.clearRect(0,0,canvas.width,canvas.height);
     return;
   }
   emptyMsg.textContent='';
@@ -2785,12 +2785,12 @@ function renderSalesDayChart() {
   const maxVal=Math.max(...values,0.01);
   const dpr=window.devicePixelRatio||1;
   const W=Math.max(50,canvas.parentElement.clientWidth-28);
-  const H=52;
+  const H=64;
   canvas.width=W*dpr; canvas.height=H*dpr;
   canvas.style.width=W+'px'; canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
-  const padL=2,padR=2,padT=4,padB=14;
+  const padL=2,padR=2,padT=4,padB=16;
   const chartW=W-padL-padR,chartH=H-padT-padB;
   const gap=chartW/days.length,barW=Math.max(2,gap-1.5);
   days.forEach((d,i)=>{
@@ -2810,8 +2810,15 @@ function renderSalesDayChart() {
   ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(padL,padT+chartH);ctx.lineTo(W-padR,padT+chartH);ctx.stroke();
   ctx.fillStyle='rgba(122,126,137,0.75)';ctx.font='8px DM Mono,monospace';ctx.textAlign='center';
-  const every=days.length<=10?1:days.length<=20?2:5;
-  days.forEach((d,i)=>{if(d===1||d%every===0||d===maxDay)ctx.fillText(d,padL+i*gap+gap/2,H-2);});
+  // Compute how many labels fit — each label needs ~14px minimum
+  const minPxPerLabel=14;
+  const maxLabels=Math.max(1,Math.floor(chartW/minPxPerLabel));
+  let every=1;
+  const labelCandidates=[1,2,3,5,7,10,14,15,20,30];
+  for(const c of labelCandidates){if(Math.ceil(days.length/c)<=maxLabels){every=c;break;}}
+  const shownDays=new Set([1,maxDay]);
+  days.forEach(d=>{if(d%every===0)shownDays.add(d);});
+  days.forEach((d,i)=>{if(shownDays.has(d))ctx.fillText(d,padL+i*gap+gap/2,H-2);});
 }
 window.addEventListener('resize',()=>renderSalesDayChart());
 
