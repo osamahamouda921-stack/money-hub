@@ -1416,9 +1416,9 @@ function addFromPaste() {
   const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
   let added = 0, skipped = 0, removedFresh = 0;
 
-  // Build lookup sets for existing stock (case-insensitive username, and REF)
-  const existingUsernames = new Set(
-    stock.map(a => (a.username||'').toLowerCase()).filter(Boolean)
+  // Build lookup sets — only non-fresh accounts block on username (fresh accounts get replaced)
+  const existingNonFreshUsernames = new Set(
+    stock.filter(a=>a.status!=='fresh').map(a => (a.username||'').toLowerCase()).filter(Boolean)
   );
   const existingRefs = new Set(
     stock.filter(a=>a.ref && a.status==='listed').map(a=>a.ref.trim())
@@ -1435,16 +1435,16 @@ function addFromPaste() {
 
     // Skip duplicate within this paste
     if(uLower && seenInPaste.has(uLower)) { skipped++; return; }
-    // Skip if username already exists in stock (any status)
-    if(uLower && existingUsernames.has(uLower)) { skipped++; return; }
+    // Skip if username already exists as a non-fresh account (listed/sold/banned)
+    if(uLower && existingNonFreshUsernames.has(uLower)) { skipped++; return; }
     // Skip if REF already exists as a listed account
     if(ref && existingRefs.has(ref)) { skipped++; return; }
 
     if(uLower) seenInPaste.add(uLower);
-    if(uLower) existingUsernames.add(uLower);
+    if(uLower) existingNonFreshUsernames.add(uLower);
     if(ref) existingRefs.add(ref);
 
-    // Auto-remove matching fresh account by username or acct_id
+    // Auto-remove matching fresh account by username or acct_id (replaces it with listed version)
     const matchIdx = stock.findIndex(a =>
       a.status === 'fresh' && (
         (a.username && parsed.username && a.username.toLowerCase()===parsed.username.toLowerCase()) ||
