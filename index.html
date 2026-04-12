@@ -123,11 +123,29 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .loading-text{font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;}
 .highlight{background:rgba(251,191,36,0.2);color:var(--amber);border-radius:3px;padding:0 2px;}
 @media(max-width:700px){
-  .header{padding:12px 14px;}
-  .content{padding:14px;}
-  .tabs{padding:0 14px;}
+  .header{padding:10px 12px;}
+  .header-inner{flex-wrap:wrap;gap:8px;}
+  .content{padding:10px 12px;}
+  .tabs{padding:0 10px;}
+  .tabs-inner{gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .tab{padding:10px 12px;font-size:12px;white-space:nowrap;}
   .g4,.g5{grid-template-columns:repeat(2,1fr);}
   .g3{grid-template-columns:repeat(2,1fr);}
+  .g2{grid-template-columns:1fr;}
+  .rates-bar{flex-wrap:wrap;gap:6px;width:100%;}
+  .rates-bar .rate-item{font-size:11px;}
+  .rates-bar input[type="number"]{width:52px;}
+  .card{padding:12px 12px;}
+  .row{flex-wrap:wrap;gap:6px;}
+  .row input,.row select,.row button{font-size:12px;}
+  .metric{padding:10px 12px;}
+  .mv{font-size:18px;}
+  .dv-main{font-size:16px;}
+  .wallet-grid{grid-template-columns:repeat(2,1fr);}
+  .search-bar{flex-wrap:wrap;gap:6px;}
+  .search-bar input[type="search"]{min-width:100px;}
+  table{font-size:11px;}
+  .btn-sm{font-size:11px;padding:0 10px;}
 }
 
 /* ── RAMMPAGE BACKGROUND ── */
@@ -619,6 +637,28 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
   <span id="sk-capital-profit" style="display:none">$0.00</span><span id="sk-capital-profit-egp" style="display:none">≈ E£0</span>
   <span id="sk-profit" style="display:none">$0.00</span><span id="sk-profit-egp" style="display:none">≈ E£0</span>
   <span id="sk-banned-loss" style="display:none">$0.00</span><span id="sk-banned-loss-egp" style="display:none">≈ E£0</span>
+
+  <!-- Expected Profit from Listed Stock -->
+  <div class="metric" style="margin-bottom:10px;border-radius:var(--rl);padding:13px 16px;border-color:rgba(251,191,36,0.3);background:linear-gradient(135deg,rgba(251,191,36,0.04),transparent);">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+      <p class="ml" style="margin:0;">&#x1F4C8; Expected Profit &#8212; Listed Stock</p>
+      <span id="sk-exp-note" style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;"></span>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px;align-items:flex-end;">
+      <div>
+        <p style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px;">Expected Profit</p>
+        <div class="dual-val"><span class="dv-main mv-green" id="sk-exp-profit">$0.00</span><span class="dv-sub" id="sk-exp-profit-egp">&#8776; E&#163;0</span></div>
+      </div>
+      <div>
+        <p style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px;">Expected Revenue</p>
+        <div class="dual-val"><span class="dv-main" id="sk-exp-rev">$0.00</span><span class="dv-sub" id="sk-exp-rev-egp">&#8776; E&#163;0</span></div>
+      </div>
+      <div>
+        <p style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px;">Avg Margin Used</p>
+        <p class="mv2" id="sk-exp-margin">&#8212;</p>
+      </div>
+    </div>
+  </div>
 
   <!-- Default Costs per Server/Method -->
   <div class="card" style="margin-bottom:10px;">
@@ -2463,6 +2503,71 @@ function renderStockStats() {
       if(opt.value==='banned') opt.text = '🚫 Banned'+(banned.length?' ('+banned.length+')':'');
     });
   }
+
+  // ── Expected Profit from Listed Stock ──────────────────────────────────────
+  // Uses actual margin % from all-time sales + server avg cost fallback for $0 accounts
+  (function renderExpectedProfit() {
+    const expProfitEl  = document.getElementById('sk-exp-profit');
+    const expRevEl     = document.getElementById('sk-exp-rev');
+    const expMarginEl  = document.getElementById('sk-exp-margin');
+    const expNoteEl    = document.getElementById('sk-exp-note');
+    const expProfitEgp = document.getElementById('sk-exp-profit-egp');
+    const expRevEgp    = document.getElementById('sk-exp-rev-egp');
+    if(!expProfitEl) return;
+
+    // 1. Overall margin from ALL-TIME sales history
+    const totalRevAll  = sales.reduce((s,t)=>s+t.priceUSD, 0);
+    const totalProfAll = sales.reduce((s,t)=>s+t.profit, 0);
+    const margin = totalRevAll > 0 ? totalProfAll / totalRevAll : 0;
+
+    if(!listed.length || margin <= 0) {
+      expProfitEl.textContent = '$0.00'; expRevEl.textContent = '$0.00';
+      expMarginEl.textContent = margin > 0 ? (margin*100).toFixed(1)+'%' : '—';
+      if(expProfitEgp) expProfitEgp.textContent = '\u2248 E\u00a30';
+      if(expRevEgp)    expRevEgp.textContent    = '\u2248 E\u00a30';
+      if(expNoteEl)    expNoteEl.textContent     = listed.length ? 'Not enough sales history' : 'No listed accounts';
+      return;
+    }
+
+    // 2. Avg cost per server (only accounts with cost > 0)
+    const servers = ['NA','EUW','EUNE','OCE'];
+    const avgCostByServer = {};
+    servers.forEach(sv => {
+      const withCost = stock.filter(a => (a.server||'').toUpperCase()===sv && a.costed > 0);
+      avgCostByServer[sv] = withCost.length > 0
+        ? withCost.reduce((s,a)=>s+a.costed,0) / withCost.length : 0;
+    });
+    const allWithCost = stock.filter(a=>a.costed>0);
+    const overallAvgCost = allWithCost.length > 0
+      ? allWithCost.reduce((s,a)=>s+a.costed,0) / allWithCost.length : 0;
+
+    // 3. Expected revenue & profit per listed account
+    // Formula: estRevenue = cost / (1 - margin)
+    let expRevTotal = 0, expProfitTotal = 0, fallbackCount = 0;
+    listed.forEach(a => {
+      let cost = a.costed;
+      if(!cost || cost === 0) {
+        cost = avgCostByServer[(a.server||'').toUpperCase()] || overallAvgCost;
+        if(cost > 0) fallbackCount++;
+      }
+      if(!cost || cost === 0) return;
+      const estRev = cost / (1 - margin);
+      expRevTotal    += estRev;
+      expProfitTotal += estRev - cost;
+    });
+
+    expProfitEl.textContent = fmtUSD(expProfitTotal);
+    expRevEl.textContent    = fmtUSD(expRevTotal);
+    expMarginEl.textContent = (margin*100).toFixed(1)+'%';
+    if(expProfitEgp) expProfitEgp.textContent = '\u2248 '+fmtEGP(expProfitTotal*EGP());
+    if(expRevEgp)    expRevEgp.textContent    = '\u2248 '+fmtEGP(expRevTotal*EGP());
+    if(expNoteEl) {
+      const base = 'Based on '+sales.length+' sale'+(sales.length!==1?'s':'');
+      expNoteEl.textContent = fallbackCount > 0
+        ? base+' \u00b7 '+fallbackCount+' acc'+(fallbackCount>1?'s':'')+' used avg cost'
+        : base;
+    }
+  })();
 
   updateNetMetric();
   // Check reminders after every stats update
