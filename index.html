@@ -223,7 +223,7 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
 </head>
 <body>
 
-<div class="loading-overlay" id="loading">
+<div class="loading-overlay" id="loading" style="display:none;">
   <div class="spinner"></div>
   <p class="loading-text" id="loading-text">Connecting to Google Sheets...</p>
 </div>
@@ -620,15 +620,66 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
   <span id="sk-profit" style="display:none">$0.00</span><span id="sk-profit-egp" style="display:none">≈ E£0</span>
   <span id="sk-banned-loss" style="display:none">$0.00</span><span id="sk-banned-loss-egp" style="display:none">≈ E£0</span>
 
-  <!-- Add Fresh Accounts -->
+  <!-- Default Costs per Server/Method -->
   <div class="card" style="margin-bottom:10px;">
-    <p class="st">➕ Add Fresh Accounts</p>
+    <p class="st" style="margin-bottom:8px;">💲 Default Fresh Account Costs</p>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:'DM Mono',monospace;">
+        <thead>
+          <tr>
+            <th style="text-align:left;color:var(--muted);padding:5px 8px;font-size:10px;letter-spacing:0.5px;border-bottom:1px solid var(--border2);">SERVER</th>
+            <th style="text-align:center;color:var(--blue);padding:5px 8px;font-size:10px;letter-spacing:0.5px;border-bottom:1px solid var(--border2);">🤖 By Bot $</th>
+            <th style="text-align:center;color:var(--amber);padding:5px 8px;font-size:10px;letter-spacing:0.5px;border-bottom:1px solid var(--border2);">✋ By Hand $</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:4px 8px;color:var(--muted);">NA</td>
+            <td style="text-align:center;padding:4px 8px;"><input type="number" id="def-cost-na-bot"  class="sk-input" style="width:72px;text-align:center;" placeholder="0.00" min="0" step="0.01" onchange="saveDefaultCosts()"></td>
+            <td style="text-align:center;padding:4px 8px;"><input type="number" id="def-cost-na-hand" class="sk-input" style="width:72px;text-align:center;" placeholder="0.00" min="0" step="0.01" onchange="saveDefaultCosts()"></td>
+          </tr>
+          <tr><td style="padding:4px 8px;color:var(--muted);">EUW</td>
+            <td style="text-align:center;padding:4px 8px;"><input type="number" id="def-cost-euw-bot"  class="sk-input" style="width:72px;text-align:center;" placeholder="0.00" min="0" step="0.01" onchange="saveDefaultCosts()"></td>
+            <td style="text-align:center;padding:4px 8px;"><input type="number" id="def-cost-euw-hand" class="sk-input" style="width:72px;text-align:center;" placeholder="0.00" min="0" step="0.01" onchange="saveDefaultCosts()"></td>
+          </tr>
+          <tr><td style="padding:4px 8px;color:var(--muted);">EUNE</td>
+            <td style="text-align:center;padding:4px 8px;"><input type="number" id="def-cost-eune-bot"  class="sk-input" style="width:72px;text-align:center;" placeholder="0.00" min="0" step="0.01" onchange="saveDefaultCosts()"></td>
+            <td style="text-align:center;padding:4px 8px;"><input type="number" id="def-cost-eune-hand" class="sk-input" style="width:72px;text-align:center;" placeholder="0.00" min="0" step="0.01" onchange="saveDefaultCosts()"></td>
+          </tr>
+          <tr><td style="padding:4px 8px;color:var(--muted);">OCE</td>
+            <td style="text-align:center;padding:4px 8px;"><input type="number" id="def-cost-oce-bot"  class="sk-input" style="width:72px;text-align:center;" placeholder="0.00" min="0" step="0.01" onchange="saveDefaultCosts()"></td>
+            <td style="text-align:center;padding:4px 8px;"><input type="number" id="def-cost-oce-hand" class="sk-input" style="width:72px;text-align:center;" placeholder="0.00" min="0" step="0.01" onchange="saveDefaultCosts()"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint-text" style="margin-top:6px;">Cost is auto-filled when adding fresh accounts. Leave blank to enter manually.</p>
+  </div>
+
+  <!-- Add Fresh Accounts — Bulk Paste -->
+  <div class="card" style="margin-bottom:10px;">
+    <p class="st">🆕 Add Fresh Accounts — Paste from Airtable</p>
+    <p class="hint-text" style="margin-bottom:8px;">Copy rows from your Airtable fresh accounts view and paste below. One account per line, tab-separated.<br>
+    Expected columns: <span style="color:var(--amber);">username · password(skip) · ID · old_pw(skip) · (skip) · method · server</span></p>
+    <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+      <textarea id="sk-fresh-paste" placeholder="Paste fresh account rows here...&#10;e.g. DavoralaSmatanie&#9;rrunTimeTerrorr!@#&#9;DavoralaSmatanie#1583&#9;O7pjIihHC09P&#9;&#9;By Bot&#9;EUNE&#10;PhilianRakabur&#9;rrunTimeTerrorr!@#&#9;PhilianRakabur#7869&#9;yXbyLoOtXo6O&#9;&#9;By Bot&#9;EUNE" style="flex:1;min-width:300px;height:90px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px;resize:vertical;outline:none;" oninput="previewFreshPaste()"></textarea>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="btn-g" style="white-space:nowrap;" onclick="addFreshFromPaste()">+ Add Fresh</button>
+        <button class="btn-sm" onclick="document.getElementById('sk-fresh-paste').value='';document.getElementById('sk-fresh-preview').style.display='none';">Clear</button>
+      </div>
+    </div>
+    <div id="sk-fresh-preview" style="display:none;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:var(--r);font-family:'DM Mono',monospace;font-size:11px;border:1px solid var(--border2);line-height:1.7;"></div>
+    <div class="warn" id="sk-fresh-warn">Could not parse. Make sure rows are tab-separated (copy directly from Airtable).</div>
+  </div>
+
+  <!-- Single fresh add (manual) -->
+  <div class="card" style="margin-bottom:10px;">
+    <p class="st">➕ Add Single Fresh Account</p>
     <div class="row" style="flex-wrap:wrap;">
       <input type="text" id="sk-add-username" placeholder="Username" style="width:120px;">
-      <select id="sk-add-server" style="width:82px;">
+      <select id="sk-add-server" style="width:82px;" onchange="autoFillFreshCost()">
         <option value="NA">NA</option><option value="EUW">EUW</option><option value="EUNE">EUNE</option><option value="OCE">OCE</option><option value="Other">Other</option>
       </select>
-      <select id="sk-add-level-method" style="width:100px;">
+      <select id="sk-add-level-method" style="width:100px;" onchange="autoFillFreshCost()">
         <option value="By Bot">By Bot</option><option value="By Hand">By Hand</option>
       </select>
       <input type="number" id="sk-add-costed" placeholder="Cost $" style="width:80px;" min="0" step="0.01">
@@ -658,6 +709,9 @@ select option{background:var(--surface2);color:var(--text);padding:4px 8px;}
     <div id="sk-paste-preview" style="display:none;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:var(--r);font-family:'DM Mono',monospace;font-size:11px;border:1px solid var(--border2);"></div>
     <div class="warn" id="sk-paste-warn">Could not parse row. Make sure it's tab-separated from Airtable/sheets.</div>
   </div>
+
+  <!-- Smart Reminders -->
+  <div id="sk-reminders" style="display:none;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;"></div>
 
   <!-- Table -->
   <div class="card">
@@ -771,6 +825,7 @@ let salesArchive = [];
 let spendArchive = [];
 let stock = [];
 let isSyncing = false;
+let hasPendingPush = false; // true when a write failed and local data is ahead of Sheets
 let activeGroupFilter = "all";
 
 // ─── DATE UTILITIES ───────────────────────────────
@@ -1017,7 +1072,15 @@ async function syncAll(push) {
         sheetWrite('spending', spendingToRows(spending)),
         sheetWrite('stock', stockToRows(stock)),
       ]);
+      hasPendingPush = false;
+      try { localStorage.removeItem('mh_pending_push'); } catch(e) {}
     } else {
+      // Safety: never overwrite local data if we have unsaved changes
+      if (hasPendingPush) {
+        setSyncStatus('err', 'Unsaved changes — push first');
+        isSyncing = false;
+        return;
+      }
       const [sRows, spRows, archRows, stRows] = await Promise.all([
         sheetRead('sales'),
         sheetRead('spending'),
@@ -1053,9 +1116,13 @@ async function pushData() {
       sheetWrite('spending', spendingToRows(spending)),
     ]);
     saveLocal();
+    hasPendingPush = false;
+    try { localStorage.removeItem('mh_pending_push'); } catch(e) {}
     setSyncStatus('ok', 'Saved ✓');
   } catch(e) {
-    saveLocal(); // at least save locally
+    saveLocal(); // always keep local copy safe
+    hasPendingPush = true;
+    try { localStorage.setItem('mh_pending_push', '1'); } catch(e) {}
     setSyncStatus('err', 'Save failed — kept locally');
   }
   isSyncing = false;
@@ -1192,15 +1259,11 @@ function addSale() {
     if(idx !== -1) {
       const acc = stock[idx];
       stock.splice(idx, 1);
-      // Show brief confirmation
-      const banner = document.createElement('div');
-      banner.textContent = '✅ Removed "'+acc.username+'" from stock (REF: '+ref+')';
-      banner.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1a2a1a;border:1px solid var(--green);color:var(--green);padding:10px 16px;border-radius:8px;font-size:12px;font-family:"DM Mono",monospace;z-index:9999;';
-      document.body.appendChild(banner);
-      setTimeout(()=>banner.remove(), 3500);
+      showToast('✅ Removed "'+acc.username+'" from stock (REF: '+ref+')', 'green');
       syncStockSilent();
     }
   }
+  checkReminders();
   pushData();
 }
 
@@ -1290,36 +1353,32 @@ function addFromPaste() {
   const warn = document.getElementById('sk-paste-warn');
   warn.style.display='none';
   if(!raw) return;
-  // Handle multiple lines (paste multiple rows at once)
   const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  let added = 0;
+  let added = 0, skipped = 0, removedFresh = 0;
   lines.forEach(line => {
     const parsed = parsePastedRow(line);
     if(!parsed) return;
-    // Check for duplicate REF
-    if(parsed.ref && stock.some(a=>a.ref && a.ref.trim()===parsed.ref.trim() && a.status==='listed')) {
-      return; // skip duplicate
-    }
-    stock.push({
-      id: 'paste_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+added,
-      ...parsed
-    });
+    const ref = (parsed.ref||'').trim();
+    if(ref && stock.some(a=>a.ref && a.ref.trim()===ref && a.status==='listed')) { skipped++; return; }
+    // Auto-remove matching fresh account by username or acct_id
+    const matchIdx = stock.findIndex(a =>
+      a.status === 'fresh' && (
+        (a.username && parsed.username && a.username.toLowerCase()===parsed.username.toLowerCase()) ||
+        (a.acct_id  && parsed.acct_id  && a.acct_id.trim()===parsed.acct_id.trim())
+      )
+    );
+    if(matchIdx !== -1) { stock.splice(matchIdx, 1); removedFresh++; }
+    stock.push({ id: 'paste_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+added, ...parsed });
     added++;
   });
-  if(!added) {
-    warn.style.display='block';
-    setTimeout(()=>warn.style.display='none',3000);
-    return;
-  }
+  if(!added) { warn.style.display='block'; setTimeout(()=>warn.style.display='none',3000); return; }
   document.getElementById('sk-paste-input').value='';
   document.getElementById('sk-paste-preview').style.display='none';
-  saveLocal(); renderStock(); syncStockSilent();
-  // Show brief success
-  const banner = document.createElement('div');
-  banner.textContent = '✅ Added '+added+' account'+(added>1?'s':'')+' to Listed';
-  banner.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1a2a1a;border:1px solid var(--green);color:var(--green);padding:10px 16px;border-radius:8px;font-size:12px;font-family:"DM Mono",monospace;z-index:9999;';
-  document.body.appendChild(banner);
-  setTimeout(()=>banner.remove(), 3000);
+  saveLocal(); renderStock(); syncStockSilent(); checkReminders();
+  let msg = '📋 Added '+added+' listed account'+(added>1?'s':'');
+  if(removedFresh) msg += ' · 🗑️ Auto-removed '+removedFresh+' fresh account'+(removedFresh>1?'s':'');
+  if(skipped) msg += ' · Skipped '+skipped+' duplicate'+(skipped>1?'s':'');
+  showToast(msg, removedFresh ? 'amber' : 'green');
 }
 
 function clearPaste() {
@@ -1955,7 +2014,7 @@ function rowsToStock(rows) {
 
 // Keep old stub functions that rerender() calls — they now just call new functions
 function saveStockDef() {}
-function loadStockDef() {}
+function loadStockDef() { loadDefaultCosts(); }
 function skDef(f) { return 0; }
 
 function calcNet() {
@@ -1980,22 +2039,183 @@ function updateNetMetric() {
   });
 }
 
+// ─── DEFAULT COSTS PER SERVER/METHOD ─────────────
+function saveDefaultCosts() {
+  const keys = ['na-bot','na-hand','euw-bot','euw-hand','eune-bot','eune-hand','oce-bot','oce-hand'];
+  const data = {};
+  keys.forEach(k => {
+    const el = document.getElementById('def-cost-'+k);
+    data[k] = el ? (parseFloat(el.value)||0) : 0;
+  });
+  try { localStorage.setItem('mh_def_costs', JSON.stringify(data)); } catch(e) {}
+}
+
+function loadDefaultCosts() {
+  try {
+    const data = JSON.parse(localStorage.getItem('mh_def_costs')||'{}');
+    Object.entries(data).forEach(([k, v]) => {
+      const el = document.getElementById('def-cost-'+k);
+      if(el && v) el.value = v;
+    });
+  } catch(e) {}
+}
+
+function getDefaultCost(server, method) {
+  // server: 'NA'|'EUW'|'EUNE'|'OCE', method: 'By Bot'|'By Hand'
+  const key = server.toLowerCase() + '-' + (method === 'By Hand' ? 'hand' : 'bot');
+  const el = document.getElementById('def-cost-'+key);
+  return el ? (parseFloat(el.value)||0) : 0;
+}
+
+function autoFillFreshCost() {
+  // Auto-fill the cost input when server or method changes
+  const server = document.getElementById('sk-add-server').value;
+  const method = document.getElementById('sk-add-level-method').value;
+  const cost = getDefaultCost(server, method);
+  const costEl = document.getElementById('sk-add-costed');
+  if(cost > 0) costEl.value = cost;
+}
+
+// ─── BULK FRESH PASTE ─────────────────────────────
+// Column order from Airtable fresh view:
+// username(0) | password-skip(1) | ID(2) | old_pw-skip(3) | skip(4) | method(5) | server(6)
+function parseFreshRow(line) {
+  const cols = line.split('\t').map(c => c.trim());
+  if(cols.length < 1 || !cols[0]) return null;
+  const username    = cols[0] || '';
+  // cols[1] = password → skip
+  const acct_id     = cols[2] || '';
+  // cols[3] = old_pw → skip
+  // cols[4] = skip
+  const level_method = cols[5] || 'By Bot';
+  const server       = cols[6] || 'NA';
+  if(!username) return null;
+  return { username, acct_id, level_method, server };
+}
+
+function previewFreshPaste() {
+  const raw = document.getElementById('sk-fresh-paste').value.trim();
+  const preview = document.getElementById('sk-fresh-preview');
+  document.getElementById('sk-fresh-warn').style.display = 'none';
+  if(!raw) { preview.style.display='none'; return; }
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const parsed = lines.map(parseFreshRow).filter(Boolean);
+  if(!parsed.length) { preview.style.display='none'; return; }
+  preview.style.display = 'block';
+  preview.innerHTML = '<span style="color:var(--green);">✓ ' + parsed.length + ' account' + (parsed.length>1?'s':'') + ' detected:</span><br>' +
+    parsed.map(a => {
+      const cost = getDefaultCost(a.server, a.level_method);
+      return `<span style="color:var(--muted);">${a.username}</span> · <span style="color:var(--blue);">${a.server}</span> · ${a.level_method}` +
+        (cost > 0 ? ` · <span style="color:var(--red);">$${cost.toFixed(2)}</span>` : ' · <span style="color:var(--hint);">no default cost</span>');
+    }).join('<br>');
+}
+
+function addFreshFromPaste() {
+  const raw = document.getElementById('sk-fresh-paste').value.trim();
+  const warn = document.getElementById('sk-fresh-warn');
+  warn.style.display = 'none';
+  if(!raw) return;
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const parsed = lines.map(parseFreshRow).filter(Boolean);
+  if(!parsed.length) { warn.style.display='block'; setTimeout(()=>warn.style.display='none',3000); return; }
+  let added = 0;
+  parsed.forEach(a => {
+    const cost = getDefaultCost(a.server, a.level_method);
+    stock.push({
+      id: 'fresh_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)+'_'+added,
+      username: a.username,
+      acct_id: a.acct_id,
+      level_method: a.level_method,
+      server: a.server,
+      assigned_to: '', rank: '', champs: '', be: '', wl: '', winrate: '', lvl: '',
+      worker_payment: false, listing_status: false, listed_on: '', ref: '', info: '',
+      costed: cost,
+      status: 'fresh'
+    });
+    added++;
+  });
+  document.getElementById('sk-fresh-paste').value = '';
+  document.getElementById('sk-fresh-preview').style.display = 'none';
+  saveLocal(); renderStock(); syncStockSilent();
+  showToast('✅ Added ' + added + ' fresh account' + (added>1?'s':'') + ' to stock', 'green');
+}
+
+// ─── SMART REMINDERS ─────────────────────────────
+// Checks state after every action and shows contextual reminders
+function checkReminders() {
+  const fresh  = stock.filter(a => a.status === 'fresh');
+  const listed = stock.filter(a => a.status === 'listed');
+  const reminders = [];
+
+  // 1. Fresh accounts with no cost set
+  const noCostFresh = fresh.filter(a => !a.costed || a.costed === 0);
+  if(noCostFresh.length) {
+    reminders.push({ msg: `⚠️ ${noCostFresh.length} fresh account${noCostFresh.length>1?'s':''} have no cost set — set default costs above or edit manually`, color: 'amber' });
+  }
+
+  // 2. Fresh accounts that have been in stock a while (no listing_status set)
+  // We track this via no REF and status still fresh
+  const unlisted = fresh.filter(a => !a.ref && !a.listing_status);
+  if(unlisted.length > 5) {
+    reminders.push({ msg: `📋 You have ${unlisted.length} fresh accounts not yet listed — remember to mark them as listed or delete them once you list them`, color: 'blue' });
+  }
+
+  // 3. After adding a sale — remind to check if fresh acc was the source
+  // (handled inline in addSale via toast — no extra reminder needed)
+
+  // 4. Listed accounts with no REF (can't be auto-removed on sale)
+  const noRef = listed.filter(a => !a.ref || !a.ref.trim());
+  if(noRef.length) {
+    reminders.push({ msg: `🔗 ${noRef.length} listed account${noRef.length>1?'s have':' has'} no REF code — add REF so they auto-delete when you log a sale`, color: 'amber' });
+  }
+
+  // 5. Remind to close month if we're at end of month
+  const now = new Date();
+  if(now.getDate() >= 28) {
+    const mk = currentMonthKey();
+    const hasUnclosed = sales.some(s => dateToMonthKey(s.date) === mk);
+    if(hasUnclosed && !salesArchive.some(a => a.monthKey === mk)) {
+      reminders.push({ msg: `📅 Month end approaching — remember to Close Month & Archive on the Sales tab`, color: 'amber' });
+    }
+  }
+
+  const container = document.getElementById('sk-reminders');
+  if(!container) return;
+  if(!reminders.length) { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  container.innerHTML = reminders.map(r =>
+    `<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:${r.color==='amber'?'var(--amber-bg)':'var(--blue-bg)'};border-radius:var(--r);border:1px solid ${r.color==='amber'?'rgba(251,191,36,0.25)':'rgba(96,165,250,0.25)'};font-size:12px;font-family:'DM Mono',monospace;color:${r.color==='amber'?'var(--amber)':'var(--blue)'};">${r.msg}</div>`
+  ).join('');
+}
+
+function showToast(msg, color) {
+  const banner = document.createElement('div');
+  const isRed = color === 'red', isAmber = color === 'amber';
+  const bg    = isRed ? '#1a0e0e' : isAmber ? '#1a1600' : '#0e1a0e';
+  const bdr   = isRed ? 'var(--red-border)' : isAmber ? 'rgba(251,191,36,0.35)' : 'rgba(74,222,128,0.35)';
+  const clr   = isRed ? 'var(--red)' : isAmber ? 'var(--amber)' : 'var(--green)';
+  banner.innerHTML = msg;
+  banner.style.cssText = `position:fixed;bottom:20px;right:20px;background:${bg};border:1px solid ${bdr};color:${clr};padding:10px 16px;border-radius:8px;font-size:12px;font-family:"DM Mono",monospace;z-index:9999;max-width:360px;line-height:1.5;`;
+  document.body.appendChild(banner);
+  setTimeout(()=>banner.remove(), 4000);
+}
+
 function addStockAccounts() {
   const username = document.getElementById('sk-add-username').value.trim();
   const warn = document.getElementById('sk-warn');
   if(!username){ warn.style.display='block'; setTimeout(()=>warn.style.display='none',2500); return; }
   warn.style.display='none';
-  const qty = Math.max(1, parseInt(document.getElementById('sk-add-qty').value)||1);
+  const qty    = Math.max(1, parseInt(document.getElementById('sk-add-qty').value)||1);
+  const server = document.getElementById('sk-add-server').value;
+  const method = document.getElementById('sk-add-level-method').value;
+  const costInput = parseFloat(document.getElementById('sk-add-costed').value);
+  const cost   = (!isNaN(costInput) && costInput > 0) ? costInput : getDefaultCost(server, method);
   const base = {
-    acct_id: '',
-    level_method: document.getElementById('sk-add-level-method').value,
-    server: document.getElementById('sk-add-server').value,
-    assigned_to: '',
+    acct_id: '', level_method: method, server, assigned_to: '',
     rank: '', champs: '', be: '', wl: '', winrate: '', lvl: '',
-    worker_payment: false, listing_status: false, listed_on: '',
-    ref: '',
+    worker_payment: false, listing_status: false, listed_on: '', ref: '',
     info: document.getElementById('sk-add-info').value.trim(),
-    costed: parseFloat(document.getElementById('sk-add-costed').value)||0,
+    costed: cost,
     status: 'fresh'
   };
   for(let i=0;i<qty;i++){
@@ -2008,6 +2228,7 @@ function addStockAccounts() {
   ['sk-add-username','sk-add-costed','sk-add-info'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('sk-add-qty').value='1';
   saveLocal(); renderStock(); syncStockSilent();
+  checkReminders();
 }
 
 function updateStock(id, field, value) {
@@ -2139,6 +2360,8 @@ function renderStockStats() {
   }
 
   updateNetMetric();
+  // Check reminders after every stats update
+  if(document.getElementById('sk-reminders')) checkReminders();
 }
 
 function renderStock() {
@@ -2395,14 +2618,36 @@ function rerender() {
 
 // ─── AUTO SYNC ────────────────────────────────────
 let lastSyncTime = 0;
-const SYNC_COOLDOWN = 30000; // don't sync more than once per 30s
+const SYNC_COOLDOWN = 30000;
 
 async function autoSync() {
   const now = Date.now();
   if (isSyncing) return;
   if (now - lastSyncTime < SYNC_COOLDOWN) return;
   lastSyncTime = now;
-  await syncAll(false);
+  // If we have unsaved local changes, push them first — never pull and overwrite them
+  if (hasPendingPush) {
+    setSyncStatus('syncing', 'Retrying save...');
+    isSyncing = true;
+    try {
+      await Promise.all([
+        sheetWrite('sales', salesToRows(sales)),
+        sheetWrite('spending', spendingToRows(spending)),
+      ]);
+      saveLocal();
+      hasPendingPush = false;
+      try { localStorage.removeItem('mh_pending_push'); } catch(e) {}
+      setSyncStatus('ok', 'Saved ✓');
+      isSyncing = false;
+      // Now safe to do a full pull to get any other changes from Sheets
+      await syncAll(false);
+    } catch(e) {
+      setSyncStatus('err', 'Still offline — data kept locally');
+      isSyncing = false;
+    }
+  } else {
+    await syncAll(false);
+  }
 }
 
 // Sync when tab becomes visible again (switching back from another tab)
@@ -2430,23 +2675,49 @@ setInterval(() => {
   loadLocal();
   loadGoal();
   loadStockDef();
-  // Render from local cache immediately — never block on network
+  try { hasPendingPush = localStorage.getItem('mh_pending_push') === '1'; } catch(e) {}
   document.getElementById('loading-text').textContent = 'Loading cached data...';
   rerender();
-  // Hide loader RIGHT NOW — don't wait for Google Sheets
+  // Hide loader immediately — never block on anything
   document.getElementById('loading').style.display = 'none';
-  // Sync in background with a hard 10s timeout — if it fails, user already has their data
+
+  // Detect Claude preview / sandboxed iframe — skip all network calls
+  const inPreview = (() => {
+    try {
+      if (window.self !== window.top) return true;
+      return false;
+    } catch(e) { return true; }
+  })();
+
+  if (inPreview) {
+    setSyncStatus('err', 'Preview mode — sync disabled');
+    return;
+  }
+
   try {
+    if (hasPendingPush) {
+      setSyncStatus('syncing', 'Saving pending changes...');
+      const pushWithTimeout = Promise.race([
+        Promise.all([
+          sheetWrite('sales', salesToRows(sales)),
+          sheetWrite('spending', spendingToRows(spending)),
+        ]),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
+      ]);
+      await pushWithTimeout;
+      hasPendingPush = false;
+      try { localStorage.removeItem('mh_pending_push'); } catch(e) {}
+      setSyncStatus('ok', 'Saved ✓');
+    }
     const syncWithTimeout = Promise.race([
       syncAll(false),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
     ]);
     await syncWithTimeout;
   } catch(e) {
-    if(e.message === 'timeout') {
-      setSyncStatus('err', 'Sheets timeout — using local data');
+    if (e.message === 'timeout') {
+      setSyncStatus('err', hasPendingPush ? 'Offline — pending changes kept locally' : 'Sheets timeout — using local data');
     }
-    // else syncAll already handled its own error display
   }
   lastSyncTime = Date.now();
 })();
